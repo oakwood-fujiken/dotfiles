@@ -4,7 +4,7 @@ set -e
 
 # ===== Install repo =====
 if [ ! -d "${HOME}"/.dotfiles ]; then
-  git clone https://github.com/nomutin/dotfiles.git "${HOME}"/.dotfiles
+  git clone https://github.com/oakwood-fujiken/dotfiles.git "${HOME}"/.dotfiles
 else
   echo "dotfiles already exists"
   exit 1

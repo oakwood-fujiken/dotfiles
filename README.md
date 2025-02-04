@@ -12,7 +12,7 @@ Minimal dotfiles for my `macOS` and `Linux`.
 </div>
 
 ```shell
-bash -c "$(curl https://raw.githubusercontent.com/nomutin/dotfiles/master/scripts/install.sh)"
+bash -c "$(curl https://raw.githubusercontent.com/oakwood-fujiken/dotfiles/main/scripts/install.sh)"
 ```
 
 ## Apps
