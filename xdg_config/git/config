@@ -1,0 +1,16 @@
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+[user]
+    name = oakwood-fujiken
+    email = oakwood.n14.4sp@keio.jp
+[core]
+    editor = nvim
+[diff]
+    tool = vimdiff
+[difftool]
+    prompt = false
+[difftool "vimdiff"]
+    cmd = nvim -d $LOCAL $BASE -c '$wincmd w' -c 'wincmd J'

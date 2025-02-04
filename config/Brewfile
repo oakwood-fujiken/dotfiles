@@ -1,0 +1,10 @@
+cask_args appdir: "/Applications"
+
+tap "homebrew/bundle"
+
+cask "alacritty"
+cask "docker"
+cask "font-hack-nerd-font"
+cask "stats"
+cask "raycast"
+cask "visual-studio-code"
