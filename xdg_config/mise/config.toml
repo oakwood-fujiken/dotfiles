@@ -1,5 +1,5 @@
 [tools]
-"asdf:richin13/asdf-neovim" = "nightly"
+"asdf:richin13/asdf-neovim" = "latest"
 ripgrep = "latest"
 zellij = "latest"
 
