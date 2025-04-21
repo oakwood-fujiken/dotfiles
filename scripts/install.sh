@@ -28,14 +28,14 @@ for item in "${HOME}"/.dotfiles/xdg_config/*; do
     echo "$link_name exists, skipping"
     continue
   fi
-  ln -sf "$item" "$link_name"
+  ln -s "$item" "$link_name"
 done
 
 # ===== Deploy bashrc =====
 if [ -f "${HOME}"/.bashrc ]; then
   echo 'source "$HOME/.dotfiles/config/bashrc"' >>~/.bashrc
 else
-  ln -sf "${HOME}"/.dotfiles/config/bashrc "${HOME}"/.bashrc
+  ln -s "${HOME}"/.dotfiles/config/bashrc "${HOME}"/.bashrc
 fi
 source "${HOME}"/.bashrc
 
