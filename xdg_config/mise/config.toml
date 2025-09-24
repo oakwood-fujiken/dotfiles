@@ -1,28 +1,9 @@
 [tools]
-"asdf:richin13/asdf-neovim" = "latest"
-ripgrep = "latest"
 zellij = "latest"
-
-# LSP
-# "npm:bash-language-server" = "latest"
-# "ubi:biomejs/biome" = "latest"
-# "npm:vscode-langservers-extracted" = "latest"
-# "ubi:latex-lsp/texlab" = "latest"
-# lua-language-server = "latest"
-# "ubi:tamasfe/taplo" = "latest"
-# "npm:vim-language-server" = "latest"
-# "npm:yaml-language-server" = "latest"
-
-# Linter/Formatter
-# "npm:markdownlint-cli2" = "latest"
-# shellcheck = "latest"
-# shfmt = "latest"
-# stylua = "0.19.0"
-
-# Other
-# ffmpeg = "latest"
-# jq = "latest"
+neovim = "latest"
+node = "20"
 lazygit = "latest"
-# node = "latest"
-# tree-sitter = "latest"
-# uv = "latest"
+ripgrep = "latest"
+fd = "latest"
+"ubi:jesseduffield/lazydocker" = "latest"
+
