@@ -1,6 +1,6 @@
 [tools]
 zellij = "latest"
-neovim = "latest"
+neovim = "0.10.4"
 node = "20"
 lazygit = "latest"
 ripgrep = "latest"
