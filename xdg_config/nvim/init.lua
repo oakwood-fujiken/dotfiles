@@ -105,23 +105,111 @@ require("lazy").setup({
   },
   { "nvim-lualine/lualine.nvim", dependencies = { "nvim-tree/nvim-web-devicons" }, opts = {} },
   {
+    "hrsh7th/nvim-cmp",
+    event = "InsertEnter",
+    dependencies = {
+      "hrsh7th/cmp-nvim-lsp", -- LSPの補完ソース
+      "hrsh7th/cmp-buffer",   -- 開いているバッファ内の単語を補完
+      "hrsh7th/cmp-path",     -- ファイルパスを補完
+      "L3MON4D3/LuaSnip",     -- スニペットエンジン
+      "saadparwaiz1/cmp_luasnip", -- nvim-cmpでLuaSnipを使えるようにする
+    },
+    config = function()
+      local cmp = require("cmp")
+      local luasnip = require("luasnip")
+
+      cmp.setup({
+        snippet = {
+          expand = function(args)
+            luasnip.lsp_expand(args.body)
+          end,
+        },
+        sources = cmp.config.sources({
+          { name = "nvim_lsp" },
+          { name = "luasnip" },
+          { name = "buffer" },
+          { name = "path" },
+        }),
+        mapping = cmp.mapping.preset.insert({
+          ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+          ['<C-f>'] = cmp.mapping.scroll_docs(4),
+          ['<C-Space>'] = cmp.mapping.complete(),
+          ['<C-e>'] = cmp.mapping.abort(),
+          ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Enterで補完を確定
+        }),
+      })
+    end,
+  },
+  {
     "williamboman/mason.nvim",
     event = "BufRead",
     dependencies = {
       "williamboman/mason-lspconfig.nvim",
-      "jay-babu/mason-null-ls.nvim",
       "neovim/nvim-lspconfig",
-      "nvimtools/none-ls.nvim",
+      "nvimtools/none-ls.nvim", -- null-lsの代わりにnone-lsを使用
+      "jay-babu/mason-null-ls.nvim", -- none-lsのツールをmasonで管理するために使用
     },
     config = function()
+      -- 共通のLSP設定を定義
+      local on_attach = function(client, bufnr)
+        -- ここにLSPが起動したときのキーマップなどを設定
+        vim.keymap.set('n', 'K', vim.lsp.buf.hover, { buffer = bufnr, desc = 'LSP Hover' })
+        vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { buffer = bufnr, desc = 'Go to Definition' })
+        vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, { buffer = bufnr, desc = 'Code Action' })
+      end
+
+      -- nvim-cmpを使っている場合、補完能力(capabilities)を設定
+      -- もしnvim-cmpをまだ使っていなければ、将来のためにこのままにしておくことをお勧めします
+      local capabilities = require('cmp_nvim_lsp').default_capabilities()
+
+      -- masonをセットアップ
       require("mason").setup()
-      require("mason-lspconfig").setup()
-      require("mason-null-ls").setup({ handlers = {} })
-      require("null-ls").setup()
-      require("mason-lspconfig").setup_handlers({
-        function(server_name)
-          require("lspconfig")[server_name].setup({})
-        end,
+
+      -- mason-lspconfigをセットアップ
+      require("mason-lspconfig").setup({
+        -- インストールしたいLSPサーバーをここに列挙
+        ensure_installed = { "lua_ls", "tsserver", "gopls", "rust_analyzer" },
+        -- 各LSPサーバーに共通設定を適用
+        handlers = {
+          function(server_name)
+            require("lspconfig")[server_name].setup({
+              on_attach = on_attach,    -- 上で定義した共通設定を渡す
+              capabilities = capabilities, -- 補完能力を渡す
+            })
+          end,
+
+          -- 特定のサーバーにだけ追加設定をしたい場合
+          ["lua_ls"] = function()
+            require("lspconfig").lua_ls.setup({
+              on_attach = on_attach,
+              capabilities = capabilities,
+              settings = {
+                Lua = {
+                  diagnostics = {
+                    globals = { "vim" },
+                  },
+                },
+              },
+            })
+          end,
+        },
+      })
+
+      -- none-ls (フォーマッタ、リンター) の設定
+      local null_ls = require("null-ls")
+      null_ls.setup({
+        sources = {
+          -- ここに使いたいフォーマッタやリンターを追加
+          -- 例: null_ls.builtins.formatting.prettier,
+          --     null_ls.builtins.diagnostics.eslint,
+        },
+      })
+
+      -- mason-null-ls (現在はnone-lsにも対応) でツールの自動インストールを管理
+      require("mason-null-ls").setup({
+        -- none-lsのsourcesに合わせて、自動インストールしたいツールを列挙
+        ensure_installed = { "prettier", "eslint_d" },
+        automatic_installation = true,
       })
     end,
   },
@@ -170,4 +258,5 @@ require("lazy").setup({
   },
   defaults = { lazy = true },
 })
+
 
