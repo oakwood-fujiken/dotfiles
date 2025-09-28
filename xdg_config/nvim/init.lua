@@ -105,6 +105,17 @@ require("lazy").setup({
   },
   { "nvim-lualine/lualine.nvim", dependencies = { "nvim-tree/nvim-web-devicons" }, opts = {} },
   {
+    "nvim-treesitter/nvim-treesitter",
+    event = "BufRead",
+    build = ":TSUpdate",
+    main = "nvim-treesitter.configs",
+    opts = {
+      ensure_installed = { "python", "lua", "vim"}, -- インストールする言語を指定
+      highlight = { enable = true }, --
+      indent = { enable = true },
+    },
+  },
+  {
     "hrsh7th/nvim-cmp",
     event = "InsertEnter",
     dependencies = {
@@ -168,7 +179,7 @@ require("lazy").setup({
       -- mason-lspconfigをセットアップ
       require("mason-lspconfig").setup({
         -- インストールしたいLSPサーバーをここに列挙
-        ensure_installed = { "lua_ls", "tsserver", "gopls", "rust_analyzer" },
+        ensure_installed = {"pyright"},
         -- 各LSPサーバーに共通設定を適用
         handlers = {
           function(server_name)
@@ -179,19 +190,6 @@ require("lazy").setup({
           end,
 
           -- 特定のサーバーにだけ追加設定をしたい場合
-          ["lua_ls"] = function()
-            require("lspconfig").lua_ls.setup({
-              on_attach = on_attach,
-              capabilities = capabilities,
-              settings = {
-                Lua = {
-                  diagnostics = {
-                    globals = { "vim" },
-                  },
-                },
-              },
-            })
-          end,
         },
       })
 
@@ -206,11 +204,6 @@ require("lazy").setup({
       })
 
       -- mason-null-ls (現在はnone-lsにも対応) でツールの自動インストールを管理
-      require("mason-null-ls").setup({
-        -- none-lsのsourcesに合わせて、自動インストールしたいツールを列挙
-        ensure_installed = { "prettier", "eslint_d" },
-        automatic_installation = true,
-      })
     end,
   },
   {
