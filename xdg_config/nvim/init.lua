@@ -54,6 +54,18 @@ local lazyrepo = "https://github.com/folke/lazy.nvim.git"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
 end
+local function find_project_root()
+  -- lspconfigが使うのと同じロジックでルートマーカーを探す
+  return require("lspconfig.util").root_pattern(
+    "pyproject.toml",
+    "setup.py",
+    "setup.cfg",
+    "requirements.txt",
+    "Pipfile",
+    "pyrightconfig.json",
+    ".git"
+  )(vim.fn.expand("%:p"))
+end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
@@ -68,17 +80,6 @@ require("lazy").setup({
         return vim.trim(ret)
       end,
       },
-    }
-  },
-  {
-    'saghen/blink.cmp',
-    version = '*',
-    opts = {
-      completion = {
-        documentation = { auto_show = true, auto_show_delay_ms = 100 },
-        list = { selection = { preselect = false, auto_insert = true } },
-      },
-      signature = { enabled = true }
     }
   },
   { "github/copilot.vim", event = "BufRead" },
@@ -252,4 +253,15 @@ require("lazy").setup({
   defaults = { lazy = true },
 })
 
+
+vim.api.nvim_create_autocmd("BufEnter", {
+  group = vim.api.nvim_create_augroup("ChangeToProjectRoot", { clear = true }),
+  pattern = "*", -- すべてのファイルタイプで実行
+  callback = function()
+    local root = find_project_root()
+    if root then
+      vim.cmd.lcd(root) -- バッファローカルなディレクトリ変更
+    end
+  end,
+})
 
