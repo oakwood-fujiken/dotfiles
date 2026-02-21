@@ -1,6 +1,9 @@
 [terminal]
-shell = "bash"
 osc52 = "CopyPaste"
+
+[terminal.shell]
+program = "/bin/bash"
+args = ["--login"]
 
 [env]
 TERM = "xterm-256color"
@@ -17,7 +20,7 @@ normal = { family = "Hack Nerd Font", style = "Regular" }
 bold = { family = "Hack Nerd Font", style = "Bold" }
 italic = { family = "Hack Nerd Font", style = "Italic" }
 bold_italic = { family = "Hack Nerd Font", style = "Bold Italic" }
-size = 13.0
+size = 15.0
 offset = { x = 0, y = 0 }
 
 [colors.primary]
@@ -26,5 +29,6 @@ foreground = '#D8DEE9'
 
 [keyboard]
 bindings = [
-    { key = ".", mods = "Control", action = "ToggleViMode" }
+    { key = ".", mods = "Control", action = "ToggleViMode" },
+    { key = "Return", mods = "Shift", chars = "\u001b\r" },
 ]
