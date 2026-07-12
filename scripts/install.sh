@@ -93,12 +93,15 @@ for item in "${HOME}"/.dotfiles/xdg_config/*; do
 done
 
 # ===== Deploy bashrc =====
-if [ -f "${HOME}"/.bashrc ]; then
-  if ! grep -q 'source "$HOME/.dotfiles/config/bashrc"' "${HOME}"/.bashrc; then
+bashrc_target="${HOME}/.dotfiles/config/bashrc"
+if [ -L "${HOME}"/.bashrc ] && [ "$(readlink "${HOME}"/.bashrc)" = "$bashrc_target" ]; then
+  : # already symlinked to dotfiles bashrc, nothing to do
+elif [ -f "${HOME}"/.bashrc ]; then
+  if ! grep -qF 'source "$HOME/.dotfiles/config/bashrc"' "${HOME}"/.bashrc; then
     echo 'source "$HOME/.dotfiles/config/bashrc"' >> "${HOME}"/.bashrc
   fi
 else
-  ln -s "${HOME}"/.dotfiles/config/bashrc "${HOME}"/.bashrc
+  ln -s "$bashrc_target" "${HOME}"/.bashrc
 fi
 source "${HOME}"/.bashrc
 
