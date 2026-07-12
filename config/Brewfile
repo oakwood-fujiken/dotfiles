@@ -6,13 +6,8 @@ tap "homebrew/cask-fonts"
 brew "mas"
 
 cask "ghostty"
-cask "docker"
 cask "font-hack-nerd-font"
-cask "microsoft-excel"
-cask "microsoft-word"
-cask "microsoft-powerpoint"
 cask "raycast"
-cask "visual-studio-code"
 cask "libreoffice"
 
 # Media preview dependencies
