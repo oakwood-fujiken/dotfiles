@@ -1,11 +1,16 @@
 cask_args appdir: "/Applications"
 
 tap "homebrew/bundle"
+tap "homebrew/cask-fonts"
+
+brew "mas"
 
 cask "ghostty"
 cask "docker"
 cask "font-hack-nerd-font"
-cask "stats"
+cask "microsoft-excel"
+cask "microsoft-word"
+cask "microsost-powerpoint"
 cask "raycast"
 cask "visual-studio-code"
 cask "libreoffice"
