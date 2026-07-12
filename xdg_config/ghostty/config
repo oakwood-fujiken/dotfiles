@@ -1,0 +1,44 @@
+# Ghostty Configuration
+# https://ghostty.org/docs
+
+# Shell
+shell-integration = bash
+command = /bin/bash --login
+
+# Font Configuration
+font-family = Hack Nerd Font
+font-size = 15
+font-feature = -calt
+
+# Window Configuration
+window-opacity = 0.85
+window-padding-x = 4
+window-padding-y = 0
+window-save-state = always
+macos-option-as-alt = true
+
+# Terminal
+term = xterm-256color
+title = Ghostty
+
+# Colors (Nord Theme)
+background = 2e3440
+foreground = d8dee9
+
+# Clipboard
+clipboard-read = allow
+clipboard-write = allow
+
+# Image Support
+# Ghostty supports Kitty Graphics Protocol by default
+# This enables image display in terminal, including over SSH
+
+# Keybindings
+# Ctrl+. for Vi mode (you may need to remap this in your shell)
+keybind = shift+enter=text:\x1b\r
+
+# Performance
+shell-integration-features = true
+
+# macOS specific
+macos-titlebar-style = tabs

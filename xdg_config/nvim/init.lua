@@ -32,6 +32,14 @@ vim.keymap.set("n", "K", vim.lsp.buf.hover) -- 定義やドキュメントをホ
 vim.keymap.set("n", "gd", vim.lsp.buf.definition) -- 定義にジャンプ
 vim.keymap.set("n", "<leader>lf", vim.lsp.buf.format) -- フォーマット
 
+-- Media preview function
+vim.api.nvim_create_user_command("MediaPreview", function()
+  local file = vim.fn.expand("%:p")
+  local script = vim.fn.expand("~/.dotfiles/scripts/media_preview.sh")
+  vim.cmd("TermExec cmd='" .. script .. " " .. file .. "'")
+end, {})
+vim.keymap.set("n", "<leader>mp", "<cmd>MediaPreview<cr>", { desc = "Preview media file" })
+
 -- ====== COLORS ======
 vim.api.nvim_set_hl(0, "Function", { fg = "NvimLightBlue" })
 vim.api.nvim_set_hl(0, "Identifier", { fg = "NvimLightBlue" })
@@ -139,6 +147,30 @@ require("lazy").setup({
       { "<leader>tj", "<cmd>ToggleTerm direction=horizontal<cr>" },
     },
     config = true,
+  },
+  {
+    "3rd/image.nvim",
+    event = "VeryLazy",
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+    },
+    opts = {
+      backend = "kitty",
+      integrations = {
+        markdown = {
+          enabled = true,
+          clear_in_insert_mode = false,
+          download_remote_images = true,
+          only_render_image_at_cursor = false,
+        },
+      },
+      max_width = 100,
+      max_height = 12,
+      max_height_window_percentage = math.huge,
+      max_width_window_percentage = math.huge,
+      window_overlap_clear_enabled = true,
+      window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
+    },
   },
   defaults = { lazy = true },
 })

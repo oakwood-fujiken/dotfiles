@@ -18,7 +18,7 @@ bash -c "$(curl https://raw.githubusercontent.com/oakwood-fujiken/dotfiles/main/
 ## Apps
 
 - Shell - [bash](https://www.gnu.org/software/bash/)
-- Terminal Emulator - [Alacritty](https://alacritty.org/)
+- Terminal Emulator - [Ghostty](https://ghostty.org/)
 - CLI Manager - [mise](https://mise.jdx.dev/)
 - App Manager (Mac) - [Homebrew](https://brew.sh)
 - Terminal Multiplexer - [zellij](https://zellij.dev)

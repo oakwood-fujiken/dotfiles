@@ -6,6 +6,9 @@ HISTFILESIZE=200000
 export PS1='\[\e[32m\]\u@\[\e[32m\]\h \[\e[33m\]\W\[\e[0m\] \$ '
 shopt -s checkwinsize
 
+# Add local bin to PATH
+export PATH="$HOME/.local/bin:$PATH"
+
 # ===== XGD Based Dirs =====
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
@@ -29,8 +32,18 @@ alias ll='ls -la'
 alias dd='du -sch $(ls -A)'
 alias wget='wget --hsts-file="$XDG_DATA_HOME"/wget-hsts'
 
+# Ghostty image display support
+if [ -n "$GHOSTTY_RESOURCES_DIR" ]; then
+  # Add imgcat if available
+  if command -v imgcat &> /dev/null; then
+    alias icat='imgcat'
+  fi
+fi
+
 # ===== Plugins =====
 eval "$(~/.local/bin/mise activate bash)"
 if [ -d /opt/homebrew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
+source ~/.zshrc
+# source "$HOME/.dotfiles/config/bashrc"

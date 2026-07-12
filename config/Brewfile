@@ -2,9 +2,14 @@ cask_args appdir: "/Applications"
 
 tap "homebrew/bundle"
 
-cask "alacritty"
+cask "ghostty"
 cask "docker"
 cask "font-hack-nerd-font"
 cask "stats"
 cask "raycast"
 cask "visual-studio-code"
+cask "libreoffice"
+
+# Media preview dependencies
+brew "poppler"    # PDF to image conversion (pdftoppm)
+brew "ffmpeg"     # Video thumbnail generation
