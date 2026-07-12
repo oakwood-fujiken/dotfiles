@@ -1,0 +1,27 @@
+layout {
+    tab name="Tab #1" {
+        pane split_direction="vertical" {
+            pane size="75%" name="main" command="bash"
+            pane size="25%" split_direction="horizontal" {
+                pane name="claude" command="bash" {
+                    args "-c" "claude; exec bash"
+                }
+                pane command="bash"
+                pane command="bash"
+            }
+        }
+    }
+    tab name="Tab #2" {
+        pane split_direction="vertical" {
+            pane size="25%" name="main" command="bash"
+            pane size="75%" split_direction="horizontal" {
+                pane name="htop" command="bash" {
+                    args "-c" "htop; exec bash"
+                }
+                pane name="nvtop" command="bash" {
+                    args "-c" "if command -v nvtop >/dev/null 2>&1; then nvtop; fi; exec bash"
+                }
+            }
+        }
+    }
+}
