@@ -1,5 +1,7 @@
 [tools]
-zellij = "latest"
+# zellij は公式リリース (github.com/zellij-org/zellij/releases) のビルド済みバイナリを aqua で取得する.
+# 旧 asdf プラグイン (chessmango/asdf-zellij) は削除済みのため使わない. https://zellij.dev/documentation/installation
+"aqua:zellij-org/zellij" = "latest"
 # neovim は 0.10.4 から配布物名が nvim-linux-x86_64 に変わり, 旧 asdf プラグインでは 404 になるため aqua を明示
 "aqua:neovim/neovim" = "0.10.4"
 node = "20"
