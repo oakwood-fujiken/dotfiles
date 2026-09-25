@@ -1,0 +1,15 @@
+{
+  "model": "opus[1m]",
+  "effortLevel": "high",
+  "tui": "fullscreen",
+  "theme": "dark-ansi",
+  "agentPushNotifEnabled": true,
+  "permissions": {
+    "deny": [
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(git -C * push*)",
+      "Bash(git * push *)"
+    ]
+  }
+}

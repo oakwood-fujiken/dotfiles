@@ -1,0 +1,35 @@
+_target_: src.{{pkg}}.config.ExperimentConfig
+# main.py が埋める値 (CLI 引数 / data/<data_dir>/config.yaml から)
+epochs: null
+data_dir: null
+seed: null
+device: null
+input_dim: null
+output_dim: null
+
+datamodule:
+  _target_: src.{{pkg}}.config.DatasetConfig
+  path: ${data_dir}
+  batch_size: 64
+  seed: ${seed}
+
+model:
+  _target_: src.{{pkg}}.config.ModelConfig
+  input_dim: ${input_dim}
+  output_dim: ${output_dim}
+  hidden_dim: 128
+  n_layers: 2
+  lr: 1.0e-3
+
+trainer:
+  _target_: src.{{pkg}}.config.TrainerConfig
+  accelerator: auto
+  devices: [0]
+  deterministic: false
+  precision: 32
+  log_every_n_steps: 10
+  check_val_every_n_epoch: 1
+  gradient_clip_val: null
+
+monitor_key: loss
+early_stop: 0

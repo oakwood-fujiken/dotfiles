@@ -105,6 +105,13 @@ else
 fi
 source "${HOME}"/.bashrc
 
+# ===== Deploy Claude Code configs =====
+if command -v python3 &> /dev/null; then
+  bash "${HOME}"/.dotfiles/scripts/claude_sync.sh || echo "Warning: Claude Code config sync failed"
+else
+  echo "Warning: python3 not found, skipping Claude Code config sync"
+fi
+
 # ===== Install applications via Homebrew (macOS only) =====
 if [ "$OS_TYPE" = "Darwin" ] && command -v brew &> /dev/null; then
   echo "Installing applications from Brewfile..."

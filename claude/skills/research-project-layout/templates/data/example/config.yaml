@@ -1,0 +1,6 @@
+# データ依存の値. main.py が models/cfg/<model>.yaml の同名キーに注入する.
+# 実データファイル (*.npz 等) は gitignore. 取得元・前処理をここか README に書く.
+input_dim: 16
+output_dim: 4
+n_train: 1024
+n_val: 256

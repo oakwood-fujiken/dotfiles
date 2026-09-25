@@ -1,0 +1,37 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache/
+
+# Virtual environments
+.venv
+
+# Models (checkpoints). models/cfg/*.yaml は commit する
+models/params/
+**/*.ckpt
+**/*.pt
+**/*.pth
+
+# Data (実データ). data/<name>/config.yaml は commit する
+**/*.blosc2
+**/*.npy
+**/*.npz
+**/*.hdf5
+**/*.h5
+
+# Figures
+**/*.png
+**/*.pdf
+**/*.gif
+
+# Experiment outputs
+reports/*
+outputs/*
+wandb/*
+
+# Claude Code
+.claude/worktrees
