@@ -12,6 +12,9 @@
 
 set -euo pipefail
 
+# git が認証の入力待ちで止まらないようにする (削除されたリポジトリは GitHub が認証を要求してくるため)
+export GIT_TERMINAL_PROMPT=0
+
 if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
   DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 else
@@ -185,6 +188,23 @@ if [ -n "$mise_bin" ]; then
   # 古い mise は廃止済みの URL (python-precompiled 等) や旧プラグインを使って失敗するので, 先に本体を更新する.
   # パッケージマネージャ経由で入れた mise は self-update できないので失敗しても続行.
   "$mise_bin" self-update -y || echo "Warning: mise self-update に失敗 (パッケージマネージャで入れた場合はそちらで更新してください)"
+  # 古い mise が入れた asdf プラグインのうち, 取得元リポジトリが消えたもの (例: chessmango/asdf-zellij) を削除する.
+  # 削除したツールは mise 標準のバックエンド (aqua 等) で入れ直される. インストール済みのバージョンは残る.
+  plugins_dir="${MISE_DATA_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/mise}/plugins"
+  # オフライン時に全プラグインを「到達不能」と誤判定しないよう, GitHub に届く時だけ判定する
+  if ! timeout 30 git ls-remote -q https://github.com/jdx/mise.git HEAD >/dev/null 2>&1; then
+    plugins_dir="/nonexistent"
+  fi
+  for plugin_dir in "$plugins_dir"/*/; do
+    [ -d "${plugin_dir}.git" ] || continue
+    plugin="$(basename "$plugin_dir")"
+    url="$(git -C "$plugin_dir" config --get remote.origin.url 2>/dev/null || true)"
+    [ -n "$url" ] || continue
+    if ! timeout 30 git ls-remote -q "$url" HEAD >/dev/null 2>&1; then
+      echo "  remove plugin: $plugin ($url に到達できないため. mise 標準のバックエンドで入れ直されます)"
+      "$mise_bin" plugins uninstall "$plugin" || echo "Warning: plugin $plugin の削除に失敗"
+    fi
+  done
   # 一部のツールが失敗しても残りの反映 (Claude Code 設定など) は続ける. 再実行で失敗分だけ再試行される.
   # $HOME で実行し, カレントディレクトリのプロジェクト設定 (.python-version 等) を拾わないようにする
   (cd "$HOME" && "$mise_bin" install -y) || echo "Warning: mise install で失敗したツールがあります. 'mise install' を再実行してください"

@@ -6,5 +6,5 @@ node = "20"
 lazygit = "latest"
 ripgrep = "latest"
 fd = "latest"
-"ubi:jesseduffield/lazydocker" = "latest"
+"github:jesseduffield/lazydocker" = "latest"
 
