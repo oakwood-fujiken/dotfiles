@@ -18,11 +18,33 @@ fi
 echo "Detected OS: $OS_TYPE${DISTRO:+ ($DISTRO)}"
 
 # ===== Install repo =====
-if [ ! -d "${HOME}"/.dotfiles ]; then
-  git clone https://github.com/oakwood-fujiken/dotfiles.git "${HOME}"/.dotfiles
-else
-  echo "dotfiles already exists"
-  exit 1
+# 途中で失敗しても再実行できる: 既に自分の dotfiles があればそれを使い,
+# 別物 (他人の dotfiles, 中途半端な残骸など) があれば退避してから clone し直す.
+REPO_SLUG="oakwood-fujiken/dotfiles"
+REPO_URL="https://github.com/${REPO_SLUG}.git"
+DOTFILES_DIR="${DOTFILES_DIR:-${HOME}/.dotfiles}"
+
+is_own_repo() {
+  local url
+  url="$(git -C "$1" remote get-url origin 2>/dev/null)" || return 1
+  case "$url" in
+    *github.com[:/]"${REPO_SLUG}" | *github.com[:/]"${REPO_SLUG}.git") return 0 ;;
+  esac
+  return 1
+}
+
+if [ -e "$DOTFILES_DIR" ] || [ -L "$DOTFILES_DIR" ]; then
+  if is_own_repo "$DOTFILES_DIR"; then
+    echo "Using existing dotfiles: $DOTFILES_DIR"
+  else
+    backup="${DOTFILES_DIR}.bak-$(date +%Y%m%d-%H%M%S)"
+    echo "$DOTFILES_DIR is not ${REPO_SLUG} ($(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || echo 'not a git repo'))"
+    echo "Moving it to $backup"
+    mv "$DOTFILES_DIR" "$backup"
+  fi
+fi
+if [ ! -e "$DOTFILES_DIR" ]; then
+  git clone "$REPO_URL" "$DOTFILES_DIR"
 fi
 
 # ===== Install system packages =====
@@ -76,60 +98,20 @@ if ! (type 'mise' >/dev/null 2>&1); then
   curl https://mise.run | sh
 fi
 
-# ===== Deploy xdg-based configs =====
-xdg_config_dir="${HOME}"/.config
-if [ ! -d "${xdg_config_dir}" ]; then
-  mkdir -p "${xdg_config_dir}"
-fi
-
-for item in "${HOME}"/.dotfiles/xdg_config/*; do
-  base_item=$(basename "$item")
-  link_name="${xdg_config_dir}/$base_item"
-  if [ -f "$link_name" ]; then
-    echo "$link_name exists, skipping"
-    continue
-  fi
-  ln -s "$item" "$link_name"
-done
-
-# ===== Deploy bashrc =====
-bashrc_target="${HOME}/.dotfiles/config/bashrc"
-if [ -L "${HOME}"/.bashrc ] && [ "$(readlink "${HOME}"/.bashrc)" = "$bashrc_target" ]; then
-  : # already symlinked to dotfiles bashrc, nothing to do
-elif [ -f "${HOME}"/.bashrc ]; then
-  if ! grep -qF 'source "$HOME/.dotfiles/config/bashrc"' "${HOME}"/.bashrc; then
-    echo 'source "$HOME/.dotfiles/config/bashrc"' >> "${HOME}"/.bashrc
-  fi
-else
-  ln -s "$bashrc_target" "${HOME}"/.bashrc
-fi
-source "${HOME}"/.bashrc
-
-# ===== Deploy Claude Code configs =====
-if command -v python3 &> /dev/null; then
-  bash "${HOME}"/.dotfiles/scripts/claude_sync.sh || echo "Warning: Claude Code config sync failed"
-else
-  echo "Warning: python3 not found, skipping Claude Code config sync"
-fi
-
-# ===== Install applications via Homebrew (macOS only) =====
-if [ "$OS_TYPE" = "Darwin" ] && command -v brew &> /dev/null; then
-  echo "Installing applications from Brewfile..."
-  brew bundle --file="${HOME}"/.dotfiles/config/Brewfile || echo "Warning: Some Brewfile installations failed"
-fi
-
-# ===== Install dependencies =====
-mise install -y
+# ===== Deploy configs (xdg_config / bashrc / mise install / brew bundle / Claude Code) =====
+bash "${DOTFILES_DIR}"/scripts/update.sh --no-pull
 
 # ===== Setup Ghostty image display tools =====
-if [ -f "${HOME}"/.dotfiles/scripts/setup_ghostty_imgcat.sh ]; then
+if [ -f "${DOTFILES_DIR}"/scripts/setup_ghostty_imgcat.sh ]; then
   echo "Setting up Ghostty image display tools..."
-  bash "${HOME}"/.dotfiles/scripts/setup_ghostty_imgcat.sh || echo "Warning: Ghostty imgcat setup failed"
+  bash "${DOTFILES_DIR}"/scripts/setup_ghostty_imgcat.sh || echo "Warning: Ghostty imgcat setup failed"
 fi
 
 # ===== Post-installation messages =====
 echo ""
 echo "===== Installation Complete! ====="
+echo ""
+echo "To update later: bash ${DOTFILES_DIR}/scripts/update.sh"
 echo ""
 echo "Next steps:"
 echo "  1. Restart your terminal or run: source ~/.bashrc"

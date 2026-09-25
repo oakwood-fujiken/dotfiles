@@ -15,6 +15,19 @@ Minimal dotfiles for my `macOS` and `Linux`.
 bash -c "$(curl https://raw.githubusercontent.com/oakwood-fujiken/dotfiles/main/scripts/install.sh)"
 ```
 
+`install.sh` は途中で失敗しても再実行できる. `~/.dotfiles` が自分の dotfiles ならそれを使い,
+別物 (他人の dotfiles など) なら `~/.dotfiles.bak-<時刻>` に退避してから clone し直す.
+
+### Update
+
+```shell
+bash ~/.dotfiles/scripts/update.sh            # git pull してから反映
+bash ~/.dotfiles/scripts/update.sh --no-pull  # 手元の内容を反映
+```
+
+`xdg_config/*` の symlink (実体があれば `~/.config/.dotfiles-backup/` へ退避, dotfiles から消した項目のリンクは削除),
+bashrc, `mise install`, `brew bundle` (macOS), Claude Code 設定 (`claude_sync.sh`) をまとめて反映する. 何度実行しても同じ結果になる.
+
 ## Apps
 
 - Shell - [bash](https://www.gnu.org/software/bash/)
