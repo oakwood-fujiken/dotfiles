@@ -30,7 +30,7 @@ REPO_URL="https://github.com/${REPO_SLUG}.git"
 
 is_own_repo() {
   local url
-  url="$(git -C "$1" remote get-url origin 2>/dev/null)" || return 1
+  url="$(git -C "$1" config --get remote.origin.url 2>/dev/null)" || return 1
   case "$url" in
     *github.com[:/]"${REPO_SLUG}" | *github.com[:/]"${REPO_SLUG}.git") return 0 ;;
   esac
