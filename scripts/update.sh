@@ -185,11 +185,10 @@ mise_bin="$(command -v mise || true)"
 [ -z "$mise_bin" ] && [ -x "${HOME}/.local/bin/mise" ] && mise_bin="${HOME}/.local/bin/mise"
 if [ -n "$mise_bin" ]; then
   echo "===== mise self-update / install ====="
-  # 古い mise は廃止済みの URL (python-precompiled 等) や旧プラグインを使って失敗するので, 先に本体を更新する.
-  # パッケージマネージャ経由で入れた mise は self-update できないので失敗しても続行.
-  "$mise_bin" self-update -y || echo "Warning: mise self-update に失敗 (パッケージマネージャで入れた場合はそちらで更新してください)"
+  # self-update は既存プラグインも更新するので, その前に消えたプラグインを片付ける.
   # 古い mise が入れた asdf プラグインのうち, 取得元リポジトリが消えたもの (例: chessmango/asdf-zellij) を削除する.
   # 削除したツールは mise 標準のバックエンド (aqua 等) で入れ直される. インストール済みのバージョンは残る.
+  pruned_tools=()
   plugins_dir="${MISE_DATA_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/mise}/plugins"
   # オフライン時に全プラグインを「到達不能」と誤判定しないよう, GitHub に届く時だけ判定する
   if ! timeout 30 git ls-remote -q https://github.com/jdx/mise.git HEAD >/dev/null 2>&1; then
@@ -202,12 +201,21 @@ if [ -n "$mise_bin" ]; then
     [ -n "$url" ] || continue
     if ! timeout 30 git ls-remote -q "$url" HEAD >/dev/null 2>&1; then
       echo "  remove plugin: $plugin ($url に到達できないため. mise 標準のバックエンドで入れ直されます)"
-      "$mise_bin" plugins uninstall "$plugin" || echo "Warning: plugin $plugin の削除に失敗"
+      "$mise_bin" plugins uninstall "$plugin" && pruned_tools+=("$plugin") || echo "Warning: plugin $plugin の削除に失敗"
     fi
   done
+  # 古い mise は廃止済みの URL (python-precompiled 等) や旧プラグインを使って失敗するので, 先に本体を更新する.
+  # パッケージマネージャ経由で入れた mise は self-update できないので失敗しても続行.
+  "$mise_bin" self-update -y || echo "Warning: mise self-update に失敗 (パッケージマネージャで入れた場合はそちらで更新してください)"
   # 一部のツールが失敗しても残りの反映 (Claude Code 設定など) は続ける. 再実行で失敗分だけ再試行される.
   # $HOME で実行し, カレントディレクトリのプロジェクト設定 (.python-version 等) を拾わないようにする
   (cd "$HOME" && "$mise_bin" install -y) || echo "Warning: mise install で失敗したツールがあります. 'mise install' を再実行してください"
+  # プラグインを削除したツールは, 旧プラグインで入れたバージョンが新しいバックエンドでは実行ファイルを見つけられない.
+  # 新しいバックエンドで最新版を入れ直す (旧バージョンのディレクトリは残るので, 起動中のプロセスには影響しない)
+  for tool in ${pruned_tools[@]+"${pruned_tools[@]}"}; do
+    echo "  reinstall: $tool@latest (新しいバックエンドで入れ直し)"
+    (cd "$HOME" && "$mise_bin" install -y "$tool@latest") || echo "Warning: $tool の入れ直しに失敗. 'mise install $tool@latest' を再実行してください"
+  done
 else
   echo "warning: mise が見つからないのでスキップ (install.sh でインストールされます)" >&2
 fi
