@@ -1,6 +1,7 @@
 [tools]
 zellij = "latest"
-neovim = "0.10.4"
+# neovim は 0.10.4 から配布物名が nvim-linux-x86_64 に変わり, 旧 asdf プラグインでは 404 になるため aqua を明示
+"aqua:neovim/neovim" = "0.10.4"
 node = "20"
 lazygit = "latest"
 ripgrep = "latest"

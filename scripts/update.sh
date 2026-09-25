@@ -104,8 +104,13 @@ fi
 mise_bin="$(command -v mise || true)"
 [ -z "$mise_bin" ] && [ -x "${HOME}/.local/bin/mise" ] && mise_bin="${HOME}/.local/bin/mise"
 if [ -n "$mise_bin" ]; then
-  echo "===== mise install ====="
-  "$mise_bin" install -y
+  echo "===== mise self-update / install ====="
+  # 古い mise は廃止済みの URL (python-precompiled 等) や旧プラグインを使って失敗するので, 先に本体を更新する.
+  # パッケージマネージャ経由で入れた mise は self-update できないので失敗しても続行.
+  "$mise_bin" self-update -y || echo "Warning: mise self-update に失敗 (パッケージマネージャで入れた場合はそちらで更新してください)"
+  # 一部のツールが失敗しても残りの反映 (Claude Code 設定など) は続ける. 再実行で失敗分だけ再試行される.
+  # $HOME で実行し, カレントディレクトリのプロジェクト設定 (.python-version 等) を拾わないようにする
+  (cd "$HOME" && "$mise_bin" install -y) || echo "Warning: mise install で失敗したツールがあります. 'mise install' を再実行してください"
 else
   echo "warning: mise が見つからないのでスキップ (install.sh でインストールされます)" >&2
 fi
