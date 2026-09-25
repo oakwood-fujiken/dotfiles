@@ -56,7 +56,7 @@ if [ ! -e "$DOTFILES_DIR" ]; then
 fi
 
 # ===== Check system packages =====
-# sudo が必要なインストール (apt / dnf / pacman / Homebrew 本体) は行わない. 不足していれば案内だけ出す.
+# sudo が必要なインストール (apt / dnf / pacman / Homebrew 本体) は行わず, sudo コマンドの案内も出さない.
 if [ "$OS_TYPE" = "Darwin" ] && ! command -v brew &>/dev/null && [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)" # Apple Silicon: インストール済みだが PATH に無い場合
 fi
@@ -73,14 +73,10 @@ if [ "$OS_TYPE" = "Darwin" ] && ! command -v brew &>/dev/null; then
 fi
 
 if [ "${#missing_pkgs[@]}" -gt 0 ]; then
-  echo "Note: 次のパッケージが見つかりません (任意. sudo が必要なため自動では入れません): ${missing_pkgs[*]}"
-  case "${OS_TYPE}:${DISTRO}" in
-    Darwin:*) echo "  brew install poppler ffmpeg && brew install --cask libreoffice" ;;
-    Linux:ubuntu | Linux:debian) echo "  sudo apt install -y poppler-utils ffmpeg libreoffice" ;;
-    Linux:fedora | Linux:rhel | Linux:centos) echo "  sudo dnf install -y poppler-utils ffmpeg libreoffice" ;;
-    Linux:arch | Linux:manjaro) echo "  sudo pacman -S poppler ffmpeg libreoffice-fresh" ;;
-    *) echo "  poppler (pdftoppm), ffmpeg, libreoffice を手動でインストールしてください" ;;
-  esac
+  echo "Note: 次のツールが見つかりません (任意. 無くても dotfiles の反映には影響しません): ${missing_pkgs[*]}"
+  if [ "$OS_TYPE" = "Darwin" ] && command -v brew &>/dev/null; then
+    echo "  brew install poppler ffmpeg && brew install --cask libreoffice"
+  fi
 fi
 
 # ===== Install mise =====
