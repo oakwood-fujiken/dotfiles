@@ -17,6 +17,14 @@ fi
 
 echo "Detected OS: $OS_TYPE${DISTRO:+ ($DISTRO)}"
 
+# ===== Required commands =====
+for cmd in git curl; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "Error: $cmd が必要です. インストールしてから再実行してください." >&2
+    exit 1
+  fi
+done
+
 # ===== Install repo =====
 # 途中で失敗しても再実行できる: 既に自分の dotfiles があればそれを使い,
 # 別物 (他人の dotfiles, 中途半端な残骸など) があれば退避してから clone し直す.
@@ -47,49 +55,31 @@ if [ ! -e "$DOTFILES_DIR" ]; then
   git clone "$REPO_URL" "$DOTFILES_DIR"
 fi
 
-# ===== Install system packages =====
-if [ "$OS_TYPE" = "Darwin" ]; then
-  # macOS: Install Homebrew
-  if ! command -v brew &> /dev/null; then
-    echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# ===== Check system packages =====
+# sudo が必要なインストール (apt / dnf / pacman / Homebrew 本体) は行わない. 不足していれば案内だけ出す.
+if [ "$OS_TYPE" = "Darwin" ] && ! command -v brew &>/dev/null && [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)" # Apple Silicon: インストール済みだが PATH に無い場合
+fi
 
-    # Add Homebrew to PATH for Apple Silicon
-    if [ -d /opt/homebrew ]; then
-      eval "$(/opt/homebrew/bin/brew shellenv)"
-    fi
-  else
-    echo "Homebrew already installed"
-  fi
-elif [ "$OS_TYPE" = "Linux" ]; then
-  # Linux: Install packages via apt/yum/pacman
-  echo "Installing system packages for Linux..."
+missing_pkgs=()
+command -v pdftoppm &>/dev/null || missing_pkgs+=(poppler)
+command -v ffmpeg &>/dev/null || missing_pkgs+=(ffmpeg)
+command -v soffice &>/dev/null || command -v libreoffice &>/dev/null || missing_pkgs+=(libreoffice)
 
-  case "$DISTRO" in
-    ubuntu|debian)
-      echo "Using apt package manager..."
-      sudo apt update
-      sudo apt install -y curl git poppler-utils ffmpeg libreoffice || echo "Warning: Some packages failed to install"
-      ;;
-    fedora|rhel|centos)
-      echo "Using dnf/yum package manager..."
-      if command -v dnf &> /dev/null; then
-        sudo dnf install -y curl git poppler-utils ffmpeg libreoffice || echo "Warning: Some packages failed to install"
-      else
-        sudo yum install -y curl git poppler-utils ffmpeg libreoffice || echo "Warning: Some packages failed to install"
-      fi
-      ;;
-    arch|manjaro)
-      echo "Using pacman package manager..."
-      sudo pacman -Sy --noconfirm curl git poppler ffmpeg libreoffice-fresh || echo "Warning: Some packages failed to install"
-      ;;
-    *)
-      echo "Warning: Unsupported Linux distribution. Please install these packages manually:"
-      echo "  - curl, git"
-      echo "  - poppler-utils (pdftoppm)"
-      echo "  - ffmpeg"
-      echo "  - libreoffice"
-      ;;
+if [ "$OS_TYPE" = "Darwin" ] && ! command -v brew &>/dev/null; then
+  echo "Note: Homebrew が見つかりません (インストールには管理者権限が必要なため自動では入れません)."
+  echo '  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+  echo "  を実行後, もう一度 install.sh (または update.sh) を実行すると Brewfile も反映されます."
+fi
+
+if [ "${#missing_pkgs[@]}" -gt 0 ]; then
+  echo "Note: 次のパッケージが見つかりません (任意. sudo が必要なため自動では入れません): ${missing_pkgs[*]}"
+  case "${OS_TYPE}:${DISTRO}" in
+    Darwin:*) echo "  brew install poppler ffmpeg && brew install --cask libreoffice" ;;
+    Linux:ubuntu | Linux:debian) echo "  sudo apt install -y poppler-utils ffmpeg libreoffice" ;;
+    Linux:fedora | Linux:rhel | Linux:centos) echo "  sudo dnf install -y poppler-utils ffmpeg libreoffice" ;;
+    Linux:arch | Linux:manjaro) echo "  sudo pacman -S poppler ffmpeg libreoffice-fresh" ;;
+    *) echo "  poppler (pdftoppm), ffmpeg, libreoffice を手動でインストールしてください" ;;
   esac
 fi
 

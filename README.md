@@ -17,6 +17,7 @@ bash -c "$(curl https://raw.githubusercontent.com/oakwood-fujiken/dotfiles/main/
 
 `install.sh` は途中で失敗しても再実行できる. `~/.dotfiles` が自分の dotfiles ならそれを使い,
 別物 (他人の dotfiles など) なら `~/.dotfiles.bak-<時刻>` に退避してから clone し直す.
+sudo が必要な処理 (apt 等でのパッケージ導入, Homebrew 本体のインストール) は行わず, 不足していればコマンドを案内するだけ. `git` と `curl` は事前に必要.
 
 ### Update
 
