@@ -40,5 +40,7 @@ bash ~/.dotfiles/scripts/claude_sync.sh --dry-run
 | `claude/skills/<name>/` | `skills/<name>` | symlink (dotfiles に無い skill には触らない) |
 | `claude/settings.json` | `settings.json` | マージ. dotfiles 側のキーが優先 (配列は置き換え), ローカルだけのキーは保持. dotfiles から消したキーはローカルからも消える |
 
+`claude/skills/scientific-figure-making/` は [figures4papers](https://github.com/ChenLiu-1996/figures4papers) からの取り込み (CC BY-NC 4.0, 出典と更新方法は同ディレクトリの `SOURCE.md`).
+
 置き換えた既存ファイルは `~/.claude/backups/dotfiles-<時刻>-<pid>/` に退避される.
 ~/.claude 側で skill を編集すると symlink 先の dotfiles が変わるので, そのまま dotfiles でコミットできる.
