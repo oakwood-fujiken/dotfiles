@@ -12,7 +12,16 @@
 
 set -euo pipefail
 
-DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+  DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+else
+  # bash -c "$(curl .../update.sh)" のようにファイル無しで実行された場合
+  DOTFILES="${DOTFILES_DIR:-${HOME}/.dotfiles}"
+fi
+if [ ! -e "${DOTFILES}/.git" ]; then
+  echo "dotfiles が見つかりません: ${DOTFILES}. 先に install.sh を実行してください" >&2
+  exit 1
+fi
 XDG_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
 BACKUP_DIR="${XDG_CONFIG_DIR}/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)-$$"
 
@@ -39,6 +48,8 @@ if [ "$PULL" = 1 ]; then
   fi
   echo "===== git pull ====="
   git -C "$DOTFILES" pull --ff-only
+  # 更新後の update.sh で最初からやり直す (古いスクリプトや curl 経由の版で続きを実行しない)
+  exec bash "${DOTFILES}/scripts/update.sh" --no-pull
 fi
 
 # ===== xdg_config =====
@@ -88,16 +99,37 @@ else
   ln -s "$bashrc_target" "${HOME}/.bashrc"
   echo "  link: ~/.bashrc -> $bashrc_target"
 fi
-# ~/.bashrc が dotfiles 配下の存在しないファイルを読んでいたら警告 (自動では書き換えない)
+# ~/.bashrc が dotfiles 配下の存在しないファイルを読んでいたら, その行をコメントアウトする
+# (シェル起動のたびにエラーになるため. 元の ~/.bashrc は退避する)
 if [ -f "${HOME}/.bashrc" ] && [ ! -L "${HOME}/.bashrc" ]; then
-  grep -nE '^[[:space:]]*(source|\.)[[:space:]]' "${HOME}/.bashrc" | while IFS= read -r line; do
-    path="$(echo "${line#*:}" | awk '{print $2}' | tr -d '"'"'")"
-    path="${path/\$HOME/$HOME}"
-    path="${path/\$\{HOME\}/$HOME}"
-    if [[ "$path" == "$DOTFILES"/* ]] && [ ! -e "$path" ]; then
-      echo "  warning: ~/.bashrc:${line%%:*} が存在しないファイルを読んでいます: $path" >&2
+  tmp_bashrc="$(mktemp)"
+  disabled=0
+  lineno=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    lineno=$((lineno + 1))
+    if [[ "$line" =~ ^[[:space:]]*(source|\.)[[:space:]]+([^[:space:]]+) ]]; then
+      path="${BASH_REMATCH[2]}"
+      path="${path//\"/}"
+      path="${path//\'/}"
+      path="${path/\$\{HOME\}/$HOME}"
+      path="${path/\$HOME/$HOME}"
+      path="${path/#\~/$HOME}"
+      if [[ "$path" == "$DOTFILES"/* ]] && [ ! -e "$path" ]; then
+        echo "# [dotfiles] 存在しないファイルのため無効化: $line" >>"$tmp_bashrc"
+        echo "  disable: ~/.bashrc:${lineno} ($path が存在しない)"
+        disabled=1
+        continue
+      fi
     fi
-  done
+    printf '%s\n' "$line" >>"$tmp_bashrc"
+  done <"${HOME}/.bashrc"
+  if [ "$disabled" = 1 ]; then
+    mkdir -p "$BACKUP_DIR"
+    cp -p "${HOME}/.bashrc" "$BACKUP_DIR/bashrc"
+    echo "  backup: ~/.bashrc -> $BACKUP_DIR/bashrc"
+    cat "$tmp_bashrc" >"${HOME}/.bashrc"
+  fi
+  rm -f "$tmp_bashrc"
 fi
 
 # ===== mise =====

@@ -44,6 +44,12 @@ is_own_repo() {
 if [ -e "$DOTFILES_DIR" ] || [ -L "$DOTFILES_DIR" ]; then
   if is_own_repo "$DOTFILES_DIR"; then
     echo "Using existing dotfiles: $DOTFILES_DIR"
+    # 既存の clone を最新にしてから反映する (未コミット変更があれば手元の内容のまま)
+    if [ -z "$(git -C "$DOTFILES_DIR" status --porcelain)" ]; then
+      git -C "$DOTFILES_DIR" pull --ff-only || echo "Warning: git pull に失敗したため手元の内容で続行します"
+    else
+      echo "Warning: $DOTFILES_DIR に未コミット変更があるため pull せずに続行します"
+    fi
   else
     backup="${DOTFILES_DIR}.bak-$(date +%Y%m%d-%H%M%S)"
     echo "$DOTFILES_DIR is not ${REPO_SLUG} ($(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || echo 'not a git repo'))"
