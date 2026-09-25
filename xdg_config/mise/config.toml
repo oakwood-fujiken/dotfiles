@@ -8,5 +8,6 @@ node = "20"
 lazygit = "latest"
 ripgrep = "latest"
 fd = "latest"
-"github:jesseduffield/lazydocker" = "latest"
+# lazydocker: github: は最新版の解決に GitHub API が必須で, 未認証の回数制限 (403) で失敗するため aqua を使う
+"aqua:jesseduffield/lazydocker" = "latest"
 

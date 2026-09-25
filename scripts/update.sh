@@ -206,13 +206,27 @@ if [ -n "$mise_bin" ]; then
   done
   # 古い mise は廃止済みの URL (python-precompiled 等) や旧プラグインを使って失敗するので, 先に本体を更新する.
   # パッケージマネージャ経由で入れた mise は self-update できないので失敗しても続行.
-  "$mise_bin" self-update -y || echo "Warning: mise self-update に失敗 (パッケージマネージャで入れた場合はそちらで更新してください)"
+  if ! "$mise_bin" self-update -y; then
+    # self-update は GitHub API を使うため, 未認証の API 回数制限 (403) で失敗することがある.
+    # 公式インストーラ (https://mise.run) は API を使わずリリースを直接取得・検証するので, それで入れ直す.
+    if [ "$mise_bin" = "${HOME}/.local/bin/mise" ]; then
+      echo "  mise self-update に失敗したため公式インストーラで入れ直します"
+      curl -fsSL https://mise.run | MISE_INSTALL_PATH="$mise_bin" sh ||
+        echo "Warning: mise の更新に失敗. 古い mise では一部のツール指定 (github: など) が使えません"
+    else
+      echo "Warning: mise self-update に失敗 (パッケージマネージャで入れた場合はそちらで更新してください)"
+    fi
+  fi
+  echo "  mise: $("$mise_bin" --version)"
   # 一部のツールが失敗しても残りの反映 (Claude Code 設定など) は続ける. 再実行で失敗分だけ再試行される.
   # $HOME で実行し, カレントディレクトリのプロジェクト設定 (.python-version 等) を拾わないようにする
   (cd "$HOME" && "$mise_bin" install -y) || echo "Warning: mise install で失敗したツールがあります. 'mise install' を再実行してください"
   # プラグインを削除したツールは, 旧プラグインで入れたバージョンが新しいバックエンドでは実行ファイルを見つけられない.
   # 新しいバックエンドで最新版を入れ直す (旧バージョンのディレクトリは残るので, 起動中のプロセスには影響しない)
   for tool in ${pruned_tools[@]+"${pruned_tools[@]}"}; do
+    # 設定でバックエンドを明示している (例: "aqua:zellij-org/zellij") ツールは mise install で入るので不要.
+    # 短い名前 (例: zellij = "latest") で書かれている場合だけ入れ直す.
+    grep -qE "^[[:space:]]*\"?${tool}\"?[[:space:]]*=" "${XDG_CONFIG_DIR}/mise/config.toml" 2>/dev/null || continue
     echo "  reinstall: $tool@latest (新しいバックエンドで入れ直し)"
     (cd "$HOME" && "$mise_bin" install -y "$tool@latest") || echo "Warning: $tool の入れ直しに失敗. 'mise install $tool@latest' を再実行してください"
   done
