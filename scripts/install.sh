@@ -30,7 +30,6 @@ done
 # 別物 (他人の dotfiles, 中途半端な残骸など) があれば退避してから clone し直す.
 REPO_SLUG="oakwood-fujiken/dotfiles"
 REPO_URL="https://github.com/${REPO_SLUG}.git"
-DOTFILES_DIR="${DOTFILES_DIR:-${HOME}/.dotfiles}"
 
 is_own_repo() {
   local url
@@ -41,24 +40,42 @@ is_own_repo() {
   return 1
 }
 
-if [ -e "$DOTFILES_DIR" ] || [ -L "$DOTFILES_DIR" ]; then
-  if is_own_repo "$DOTFILES_DIR"; then
-    echo "Using existing dotfiles: $DOTFILES_DIR"
-    # 既存の clone を最新にしてから反映する (未コミット変更があれば手元の内容のまま)
-    if [ -z "$(git -C "$DOTFILES_DIR" status --porcelain)" ]; then
-      git -C "$DOTFILES_DIR" pull --ff-only || echo "Warning: git pull に失敗したため手元の内容で続行します"
-    else
-      echo "Warning: $DOTFILES_DIR に未コミット変更があるため pull せずに続行します"
-    fi
-  else
-    backup="${DOTFILES_DIR}.bak-$(date +%Y%m%d-%H%M%S)"
-    echo "$DOTFILES_DIR is not ${REPO_SLUG} ($(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || echo 'not a git repo'))"
-    echo "Moving it to $backup"
-    mv "$DOTFILES_DIR" "$backup"
+# 自分の dotfiles を origin/main に fast-forward する. できない (未コミット変更 / 独自コミット /
+# main 以外のブランチ) 場合は 1 を返す. オフライン等で fetch できない時は手元の内容で続行 (0).
+fast_forward_repo() {
+  local dir="$1"
+  if ! GIT_TERMINAL_PROMPT=0 git -C "$dir" fetch -q origin main; then
+    echo "Warning: git fetch に失敗したため手元の内容で続行します" >&2
+    return 0
   fi
-fi
-if [ ! -e "$DOTFILES_DIR" ]; then
-  git clone "$REPO_URL" "$DOTFILES_DIR"
+  [ -z "$(git -C "$dir" status --porcelain)" ] || return 1
+  [ "$(git -C "$dir" branch --show-current)" = "main" ] || return 1
+  git -C "$dir" merge-base --is-ancestor HEAD origin/main || return 1
+  git -C "$dir" merge -q --ff-only origin/main
+}
+
+# 古い / 他人の / 壊れた dotfiles を <dir>.bak-<時刻> に退避して clone し直す (中身は消さない)
+reclone_repo() {
+  local dir="$1" backup
+  backup="${dir}.bak-$(date +%Y%m%d-%H%M%S)"
+  echo "Moving $dir to $backup and cloning ${REPO_SLUG}"
+  mv "$dir" "$backup"
+  git clone -q "$REPO_URL" "$dir"
+}
+
+DOTFILES_DIR="${DOTFILES_DIR:-${HOME}/.dotfiles}"
+if [ -e "$DOTFILES_DIR" ] || [ -L "$DOTFILES_DIR" ]; then
+  if ! is_own_repo "$DOTFILES_DIR"; then
+    echo "$DOTFILES_DIR is not ${REPO_SLUG} ($(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || echo 'not a git repo'))"
+    reclone_repo "$DOTFILES_DIR"
+  elif fast_forward_repo "$DOTFILES_DIR"; then
+    echo "Using existing dotfiles: $DOTFILES_DIR ($(git -C "$DOTFILES_DIR" log --oneline -1))"
+  else
+    echo "$DOTFILES_DIR は origin/main に fast-forward できません (未コミット変更 / 独自コミット / 別ブランチ)"
+    reclone_repo "$DOTFILES_DIR"
+  fi
+else
+  git clone -q "$REPO_URL" "$DOTFILES_DIR"
 fi
 
 # ===== Check system packages =====

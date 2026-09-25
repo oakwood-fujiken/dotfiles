@@ -18,12 +18,47 @@ else
   # bash -c "$(curl .../update.sh)" のようにファイル無しで実行された場合
   DOTFILES="${DOTFILES_DIR:-${HOME}/.dotfiles}"
 fi
-if [ ! -e "${DOTFILES}/.git" ]; then
+if [ ! -e "${DOTFILES}" ]; then
   echo "dotfiles が見つかりません: ${DOTFILES}. 先に install.sh を実行してください" >&2
   exit 1
 fi
 XDG_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
 BACKUP_DIR="${XDG_CONFIG_DIR}/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)-$$"
+
+REPO_SLUG="oakwood-fujiken/dotfiles"
+REPO_URL="https://github.com/${REPO_SLUG}.git"
+
+is_own_repo() {
+  local url
+  url="$(git -C "$1" remote get-url origin 2>/dev/null)" || return 1
+  case "$url" in
+    *github.com[:/]"${REPO_SLUG}" | *github.com[:/]"${REPO_SLUG}.git") return 0 ;;
+  esac
+  return 1
+}
+
+# 自分の dotfiles を origin/main に fast-forward する. できない (未コミット変更 / 独自コミット /
+# main 以外のブランチ) 場合は 1 を返す. オフライン等で fetch できない時は手元の内容で続行 (0).
+fast_forward_repo() {
+  local dir="$1"
+  if ! GIT_TERMINAL_PROMPT=0 git -C "$dir" fetch -q origin main; then
+    echo "Warning: git fetch に失敗したため手元の内容で続行します" >&2
+    return 0
+  fi
+  [ -z "$(git -C "$dir" status --porcelain)" ] || return 1
+  [ "$(git -C "$dir" branch --show-current)" = "main" ] || return 1
+  git -C "$dir" merge-base --is-ancestor HEAD origin/main || return 1
+  git -C "$dir" merge -q --ff-only origin/main
+}
+
+# 古い / 他人の / 壊れた dotfiles を <dir>.bak-<時刻> に退避して clone し直す (中身は消さない)
+reclone_repo() {
+  local dir="$1" backup
+  backup="${dir}.bak-$(date +%Y%m%d-%H%M%S)"
+  echo "Moving $dir to $backup and cloning ${REPO_SLUG}"
+  mv "$dir" "$backup"
+  git clone -q "$REPO_URL" "$dir"
+}
 
 PULL=1
 for arg in "$@"; do
@@ -42,12 +77,22 @@ done
 
 # ===== Pull =====
 if [ "$PULL" = 1 ]; then
-  if [ -n "$(git -C "$DOTFILES" status --porcelain)" ]; then
-    echo "dotfiles に未コミット変更があるため pull しません ($DOTFILES). --no-pull で手元の内容を反映できます" >&2
-    exit 1
+  echo "===== Update dotfiles repo ====="
+  default_dir="${DOTFILES_DIR:-${HOME}/.dotfiles}"
+  # 既定の ~/.dotfiles (symlink でない実体) だけは, 古い / 他人の clone を退避して clone し直してよい.
+  # 開発用の checkout (~/work/dotfiles 等) や symlink の場合は作業内容を尊重して手元の内容で続行する.
+  if [ "$DOTFILES" = "$default_dir" ] && [ ! -L "$DOTFILES" ]; then
+    if ! is_own_repo "$DOTFILES"; then
+      echo "$DOTFILES is not ${REPO_SLUG}"
+      reclone_repo "$DOTFILES"
+    elif ! fast_forward_repo "$DOTFILES"; then
+      echo "$DOTFILES は origin/main に fast-forward できません (未コミット変更 / 独自コミット / 別ブランチ)"
+      reclone_repo "$DOTFILES"
+    fi
+  elif ! fast_forward_repo "$DOTFILES"; then
+    echo "Warning: $DOTFILES は fast-forward できないため手元の内容で続行します" >&2
   fi
-  echo "===== git pull ====="
-  git -C "$DOTFILES" pull --ff-only
+  echo "dotfiles: $(git -C "$DOTFILES" log --oneline -1)"
   # 更新後の update.sh で最初からやり直す (古いスクリプトや curl 経由の版で続きを実行しない)
   exec bash "${DOTFILES}/scripts/update.sh" --no-pull
 fi
