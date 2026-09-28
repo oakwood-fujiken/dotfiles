@@ -1,6 +1,6 @@
 ---
 name: commit
-description: 現在の変更をコミットし, worktree で作業している場合は主たる checkout (main worktree) の現在ブランチへ統合する. push は絶対にしない. ユーザーが /commit と打ったときだけ使う.
+description: 現在の変更をコミットし, このセッションが作成した worktree で作業している場合は主たる checkout (main worktree) の現在ブランチへ統合する. 他のセッションが作った worktree は明示されない限り触らない. push は絶対にしない. ユーザーが /commit と打ったときだけ使う.
 disable-model-invocation: true
 argument-hint: "[squash] [コミットメッセージの要点]"
 ---
@@ -19,13 +19,27 @@ argument-hint: "[squash] [コミットメッセージの要点]"
 - `--force`, `--no-verify`, 履歴書き換え (主 checkout のブランチに対する rebase/amend) をしない.
   rebase してよいのは worktree 側の作業ブランチだけ.
 - 問題が起きたら止めて状況を報告する. 推測で強行しない.
+- **このセッションが作成していない worktree は無視する.** 対象にするのは, このセッション中に
+  `EnterWorktree` や `git worktree add` で自分が作った worktree だけ. ユーザーが明示的に
+  (パスやブランチ名で) 指定した場合を除き, 他のセッションやユーザーが作った worktree の
+  コミット・rebase・統合はしない. `git worktree list` に他の worktree が並んでいても触らない.
 
 ## 手順
 
-### 0. 状況把握
+### 0. 対象の決定と状況把握
+
+対象 (`WT`) は次の順で決める:
+
+1. ユーザーが `/commit` の引数や直前の発言で worktree のパス / ブランチを明示している → それ.
+2. このセッションで作成した worktree がある → それ (複数あれば, 今回の作業のものを選び, 迷えばユーザーに確認).
+3. どちらも無い → カレントディレクトリのリポジトリ (`git rev-parse --show-toplevel`).
+   カレントディレクトリが自分の作っていない worktree の中なら, 統合はせずユーザーに確認する.
+
+このセッションで作ったかどうかは会話の履歴 (自分が実行した `EnterWorktree` / `git worktree add`) で判断する.
+判断できない worktree は「作っていない」として扱う.
 
 ```bash
-WT=$(git rev-parse --show-toplevel)
+WT=<上で決めた worktree のパス>   # 例: WT=$(git rev-parse --show-toplevel)
 MAIN=$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}')   # 先頭 = 主 checkout
 BR=$(git -C "$WT" branch --show-current)
 TARGET=$(git -C "$MAIN" branch --show-current)
@@ -70,3 +84,4 @@ git -C "$MAIN" commit   # BR のコミット群を要約したメッセージ
 - `git -C "$MAIN" status -sb` の ahead 数 = **未 push のコミット数**. push はしていないことを明記し,
   必要ならユーザーが実行するコマンドとして `git -C "$MAIN" push` を示す (実行はしない).
 - worktree は削除しない (セッション終了時の確認に任せる).
+- 無視した (このセッションが作っていない) worktree に未統合の変更があっても, 統合せず存在だけ一言添える.
