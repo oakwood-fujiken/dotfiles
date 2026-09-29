@@ -76,6 +76,10 @@ local function find_project_root()
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- Ubuntu 20.04 以前 (glibc < 2.34) では neovim 0.10.4 に固定している (xdg_config/mise/config.legacy.toml).
+-- 一部のプラグインは最新版が neovim 0.11 以上を前提にしているため, 0.10 以下では 0.10 に対応する最後のリリースに固定する
+local legacy_nvim = vim.fn.has("nvim-0.11") == 0
+
 require("lazy").setup({
   {
     "akinsho/bufferline.nvim",
@@ -100,6 +104,7 @@ require("lazy").setup({
   },
   {
     "lewis6991/gitsigns.nvim",
+    tag = legacy_nvim and "v2.1.0" or nil, -- v2.1.0 より後は neovim 0.11 以上が必要 (vim.validate の新しい書式)
     dependencies = { "petertriho/nvim-scrollbar" },
     event = "BufReadPre",
     keys = {
@@ -162,11 +167,13 @@ require("lazy").setup({
   },
   {
     "williamboman/mason.nvim",
+    version = legacy_nvim and "^1.0.0" or nil, -- mason-lspconfig v1 は mason v2 と組み合わせられない
     event = "BufRead",
     dependencies = {
       "williamboman/mason-lspconfig.nvim",
       "neovim/nvim-lspconfig",
       "nvimtools/none-ls.nvim", -- null-lsの代わりにnone-lsを使用
+      "nvim-lua/plenary.nvim", -- none-ls が必要とする
       "jay-babu/mason-null-ls.nvim", -- none-lsのツールをmasonで管理するために使用
     },
     config = function()
@@ -215,6 +222,9 @@ require("lazy").setup({
       -- mason-null-ls (現在はnone-lsにも対応) でツールの自動インストールを管理
     end,
   },
+  -- v2 は neovim 0.11 の vim.lsp.enable / vim.lsp.config が前提
+  { "williamboman/mason-lspconfig.nvim", version = legacy_nvim and "^1.0.0" or nil },
+  { "neovim/nvim-lspconfig", version = legacy_nvim and "^1.0.0" or nil },
   {
     "nvim-treesitter/nvim-treesitter",
     event = "BufRead",
