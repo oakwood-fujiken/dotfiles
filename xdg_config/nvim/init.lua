@@ -260,12 +260,16 @@ require("lazy").setup({
   },
   {
     "3rd/image.nvim",
+    -- luarocks (magick rock) を使わず ImageMagick の CLI で処理する (https://github.com/3rd/image.nvim#installation).
+    -- rock を使うと lazy.nvim が hererocks で Lua 5.1 をビルドしようとし, 環境によって失敗する
+    build = false,
     event = "VeryLazy",
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
     },
     opts = {
       backend = "kitty",
+      processor = "magick_cli",
       integrations = {
         markdown = {
           enabled = true,

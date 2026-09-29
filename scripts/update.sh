@@ -181,6 +181,16 @@ if [ -f "${HOME}/.bashrc" ] && [ ! -L "${HOME}/.bashrc" ]; then
 fi
 
 # ===== mise =====
+# (config/bashrc と同じ判定) glibc が 2.34 未満 (Ubuntu 20.04 以前) の環境では新しいビルド済みバイナリ (neovim 0.11 以降など) が動かないため,
+# mise に xdg_config/mise/config.legacy.toml の指定を使わせる
+if [ "$(uname -s)" = "Linux" ] && [ -z "${MISE_ENV:-}" ]; then
+  _glibc_version="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
+  if [ -n "$_glibc_version" ] && [ "$(printf '%s\n2.34\n' "$_glibc_version" | sort -V | head -1)" != "2.34" ]; then
+    export MISE_ENV=legacy
+  fi
+  unset _glibc_version
+fi
+[ -n "${MISE_ENV:-}" ] && echo "===== mise: MISE_ENV=${MISE_ENV} (glibc $(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')) ====="
 mise_bin="$(command -v mise || true)"
 [ -z "$mise_bin" ] && [ -x "${HOME}/.local/bin/mise" ] && mise_bin="${HOME}/.local/bin/mise"
 if [ -n "$mise_bin" ]; then

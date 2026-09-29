@@ -29,6 +29,9 @@ bash ~/.dotfiles/scripts/update.sh --no-pull  # 手元の内容を反映
 `xdg_config/*` の symlink (実体があれば `~/.config/.dotfiles-backup/` へ退避, dotfiles から消した項目のリンクは削除),
 bashrc, `mise install`, `brew bundle` (macOS), Claude Code 設定 (`claude_sync.sh`) をまとめて反映する. 何度実行しても同じ結果になる.
 
+glibc が 2.34 未満の Linux (Ubuntu 20.04 以前) では `MISE_ENV=legacy` が自動で設定され (`config/bashrc`, `update.sh`),
+`xdg_config/mise/config.legacy.toml` の指定 (neovim 0.10.4 など) で上書きされる. Ubuntu 22.04 以降は `config.toml` の指定 (neovim 最新版) を使う.
+
 ## Apps
 
 - Shell - [bash](https://www.gnu.org/software/bash/)

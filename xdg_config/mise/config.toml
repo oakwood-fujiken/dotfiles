@@ -2,12 +2,14 @@
 # zellij は公式リリース (github.com/zellij-org/zellij/releases) のビルド済みバイナリを aqua で取得する.
 # 旧 asdf プラグイン (chessmango/asdf-zellij) は削除済みのため使わない. https://zellij.dev/documentation/installation
 "aqua:zellij-org/zellij" = "latest"
-# neovim は 0.10.4 から配布物名が nvim-linux-x86_64 に変わり, 旧 asdf プラグインでは 404 になるため aqua を明示
-"aqua:neovim/neovim" = "0.10.4"
+# neovim は aqua を明示 (0.10.4 以降は配布物名が nvim-linux-x86_64 に変わり, 旧 asdf プラグインでは 404 になる).
+# 0.11 以降の公式バイナリは glibc 2.34 以上が必要. Ubuntu 20.04 以前は config.legacy.toml で 0.10.4 に固定する
+"aqua:neovim/neovim" = "latest"
 node = "20"
 lazygit = "latest"
 ripgrep = "latest"
 fd = "latest"
 # lazydocker: github: は最新版の解決に GitHub API が必須で, 未認証の回数制限 (403) で失敗するため aqua を使う
 "aqua:jesseduffield/lazydocker" = "latest"
-
+# image.nvim (processor = "magick_cli") 用の ImageMagick. apt (sudo) を使わず conda-forge のビルド済みを入れる
+"conda:imagemagick" = "latest"

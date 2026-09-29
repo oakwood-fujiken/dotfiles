@@ -1,0 +1,4 @@
+# glibc < 2.34 (Ubuntu 20.04 以前) 用の上書き. MISE_ENV=legacy の時だけ読まれる (config/bashrc と update.sh で自動設定).
+# 各ツールの公式バイナリが要求する glibc: neovim 0.10.4 = 2.29, 0.11.0 以降 = 2.34
+[tools]
+"aqua:neovim/neovim" = "0.10.4"
