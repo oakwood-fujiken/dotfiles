@@ -47,7 +47,6 @@ class TrainerConfig:
 
 @dataclass
 class ExperimentConfig:
-    epochs: int
     data_dir: str
     seed: int
     device: int
@@ -56,5 +55,6 @@ class ExperimentConfig:
     datamodule: DatasetConfig
     model: ModelConfig
     trainer: TrainerConfig
+    epochs: int = 100
     monitor_key: str = "loss"
     early_stop: int = 0

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 from dataclasses import asdict
@@ -28,10 +30,11 @@ def report_dir(data_dir: str, model_name: str, seed: int) -> str:
     return f"reports/{data_dir}/{model_name}/seed:{seed}/"
 
 
-def load_config(model_name: str, data_dir: str, seed: int, device: int, epochs: int) -> ExperimentConfig:
+def load_config(model_name: str, data_dir: str, seed: int, device: int, epochs: int | None) -> ExperimentConfig:
     config = OmegaConf.load(f"models/cfg/{model_name}.yaml")
     config.seed = seed
-    config.epochs = epochs
+    if epochs is not None:
+        config.epochs = epochs
     config.device = device
     config.data_dir = data_dir
 
@@ -84,12 +87,14 @@ def run_evaluate(model_name: str, config: ExperimentConfig, load_last: bool):
 
 
 if __name__ == "__main__":
+    # 引数はすべて既定値を持つ (`main.py --train` で主実験が回る). ハイパーパラメータは
+    # models/cfg/<model>.yaml に書き, ここには増やさない.
     parser = argparse.ArgumentParser(prog="main.py")
     parser.add_argument("--model", type=str, default="default", help="models/cfg/<model>.yaml")
     parser.add_argument("--data_dir", type=str, default="example", help="data/<data_dir>/config.yaml")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", type=int, default=0)
-    parser.add_argument("--epochs", type=int, default=1000)
+    parser.add_argument("--epochs", type=int, default=None, help="動作確認用の上書き. 既定は YAML の epochs")
     parser.add_argument("--train", "-tr", action="store_true", help="train model")
     parser.add_argument("--evaluate", "-e", action="store_true", help="evaluate model")
     parser.add_argument("--load_last", "-l", action="store_true", help="use last.ckpt instead of model.ckpt")

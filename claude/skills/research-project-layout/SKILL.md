@@ -17,14 +17,15 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 ├── .python-version
 ├── .gitignore              # templates/.gitignore
 ├── README.md               # 日本語. セットアップ / 学習 / 評価 / 手法メモ
-├── main.py                 # 唯一の実験エントリ: --model --data_dir --seed --device --train/--evaluate
+├── main.py                 # 唯一の実験エントリ: `uv run python main.py --train` だけで既定の実験が回る
 ├── src/
 │   └── <pkg>/              # ライブラリ本体. main.py からは `from src.<pkg>.xxx import ...`
 │       ├── __init__.py
 │       ├── config.py       # 全設定の dataclass (ExperimentConfig / DatasetConfig / TrainerConfig / ModelConfig ...)
 │       ├── dataset.py      # LightningDataModule
 │       ├── model.py        # LightningModule (大きくなれば encoders.py / decoders.py / loss.py などに分割)
-│       └── eval.py         # 評価 → reports/ に書き出す
+│       ├── eval.py         # 評価 → reports/ に書き出す
+│       └── <sub>/          # (必要なら) ベンチマーク連携や, 外部リポジトリから抜き出して実装し直した部分
 ├── models/
 │   ├── cfg/<model>.yaml    # 実験設定. `_target_: src.<pkg>.config.XxxConfig` を hydra instantiate. commit する
 │   └── params/<data>/<model>/seed:<seed>/{model.ckpt,last.ckpt}   # チェックポイント. gitignore
@@ -32,6 +33,7 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 │   └── <data_name>/config.yaml     # データのメタ情報 (shape, 次元, 正規化統計, 取得元). commit する
 │       └── (実データ *.npz / *.hdf5 / *.blosc2 は gitignore)
 ├── reports/<data>/<model>/seed:<seed>/  # 評価結果 (metrics.json, 図). gitignore
+├── third_party/<name>/     # (必要なら) 別リポジトリのプロジェクト全体. git submodule
 ├── scripts/                # 補助スクリプト (比較・可視化・変換・外部ベンチ実行). main.py の代わりにはしない
 ├── outputs/                # hydra / 一時出力. gitignore
 └── wandb/                  # WandbLogger の save_dir. gitignore
@@ -52,9 +54,31 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
    `--train` / `--evaluate` などのフラグで動作を切り替える.
 4. **commit するのは コード / YAML / data の config.yaml / README / uv.lock.**
    チェックポイント, 実データ, reports, outputs, wandb は commit しない.
-5. **サブパッケージ**: ベンチマーク連携など独立した塊は `src/<pkg>/<sub>/` に. 外部コードを vendoring する場合は
-   `src/<vendored_name>/` に置き README に出典と commit を明記.
-6. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
+5. **リポジトリ内で完結させる.** `git clone` → `uv sync` した 1 ディレクトリだけで学習・評価が動くこと.
+   兄弟ディレクトリなどリポジトリ外の場所を前提にしない.
+   - `--oc_storm_root ../OC-STORM` のように **外部ディレクトリの場所を CLI 引数や設定で受け取る実装は禁止**.
+     `../` や `~/`, 絶対パスをコード・YAML に書かない.
+   - 外部リポジトリのコードは, 必要な範囲で次のどちらかにする (pip で入るものは単に `pyproject.toml` の依存にする):
+     - **プロジェクト全体が要る** (ベースライン一式を動かす, 環境・ベンチマークとして使うなど):
+       `git submodule add <url> third_party/<name>` で入れる. 中身は編集しない. パッケージとして import するなら
+       `uv add --editable third_party/<name>`. README のセットアップに `git submodule update --init --recursive` を書く.
+     - **一部のモジュールだけ欲しい** (OC-STORM の特定の encoder だけ, など): submodule にせず, 必要な箇所だけを抜き出して
+       `src/<pkg>/` の中に自分のコードとして実装する (このプロジェクトの config dataclass / 命名に合わせ, 使わない分岐や依存は落とす).
+       ファイル冒頭のコメントと README に出典 (リポジトリ URL, commit, 元ファイル) を書く.
+     - 迷ったら後者. 数ファイルのために丸ごと submodule を足さない.
+   - 外部の学習済み重みは `models/params/` 以下, 外部データは `data/<data_name>/` 以下に置く (取得手順は README か
+     `scripts/` のダウンロードスクリプトに). 容量の都合で実体を別ディスクに置く場合も, コードが見るのは
+     リポジトリ内のパスだけにし, symlink で繋ぐ.
+   - パスはリポジトリルートからの相対で, 規約 1 の `(model, data_dir, seed)` から組み立てる. パス自体を引数にしない.
+   - ベンチマーク連携など自前の独立した塊は `src/<pkg>/<sub>/` に置く.
+6. **CLI 引数は最小限, すべて既定値を持つ.** 普段の学習は `uv run python main.py --train` で済むようにする.
+   - CLI に出すのは実験の識別 (`--model --data_dir --seed`), 実行環境 (`--device`), 動作切り替え (`--train --evaluate` など) だけ.
+     `--model` / `--data_dir` の既定値はそのプロジェクトの主実験にする. `required=True` は使わない.
+   - ハイパーパラメータ (epochs, batch_size, lr, ...) は `models/cfg/<model>.yaml` に書き, dataclass 側にも既定値を持たせる.
+     CLI 引数として増やさない. 条件を変えたいときは YAML を 1 枚増やす (規約 2).
+   - データ依存の値は `data/<data_dir>/config.yaml` から注入する (規約 1). CLI で渡さない.
+   - 一時的な上書き用の引数 (`--epochs` など動作確認用) は既定値 `None` = 「YAML の値を使う」とする.
+7. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
 
 ## 手順 A: 新規プロジェクト
 
@@ -66,10 +90,10 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
    ```
    `--dry-run` で作成予定だけ表示できる.
 3. `cd <target_dir> && git init` (未初期化なら) → `uv sync` → `uv lock` 済みを確認.
-4. 動作確認: `WANDB_MODE=disabled uv run python main.py --model default --data_dir example --epochs 1 --train`
+4. 動作確認: `WANDB_MODE=disabled uv run python main.py --epochs 1 --train`
    (テンプレートの toy モデル/データで 1 epoch 回る) → `--evaluate` で `reports/example/default/seed:0/metrics.json` が出ることを確認.
 5. テンプレートの toy 部分 (`model.py` の MLP, `dataset.py` のランダムデータ, `data/example`) を実際の研究内容へ置き換える.
-   構成と規約 1–4 は維持する.
+   `--model` / `--data_dir` の既定値を主実験のものに直す. 構成と規約 1–6 は維持する.
 
 ## 手順 B: 既存プロジェクトを整理
 
@@ -79,8 +103,11 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
    で不足・逸脱を一覧する. 加えて自分で以下を確認:
    - エントリポイントはどこか (複数の train_*.py が散在していないか)
    - 設定はどこにあるか (argparse 直書き / json / 別の yaml 構成)
+   - リポジトリ外への依存 (`--xxx_root ../Foo` のような引数, `../`・`~/`・絶対パス, `sys.path` への外部ディレクトリ追加) → 規約 5 に従い,
+     全体が要るなら `third_party/` の submodule, 一部だけなら `src/<pkg>/` へ抜き出して実装
+   - CLI 引数の数 (必須引数, ハイパーパラメータの引数化) → 規約 6 に従い YAML と既定値へ移す
    - チェックポイント・結果の出力先, `.gitignore` の漏れ (巨大ファイルが track されていないか: `git ls-files | xargs du -ch 2>/dev/null | tail -1`)
-2. 「現在のパス → 標準構成のパス」の対応表と, コード変更が必要な箇所 (import パス, ハードコードされた出力先) を
+2. 「現在のパス → 標準構成のパス」の対応表と, コード変更が必要な箇所 (import パス, ハードコードされた出力先, 削る CLI 引数と移す先) を
    ユーザーに提示し承認を得る. 大きく書き換わる場合は worktree / ブランチで作業する.
 3. 移動は `git mv` で履歴を保つ. import (`from src.<pkg>...`) とパス文字列を更新する.
 4. 不足ファイルだけ scaffold で補う (上書きしないので安全): `scaffold.py <dir> --pkg <pkg>`.
@@ -91,4 +118,4 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 
 `templates/` 以下. `__pkg__` / `{{pkg}}` / `{{project}}` / `{{python}}` が置換される.
 テンプレートの Lightning / hydra / wandb は参照実装と同じスタック. 研究内容に合わないもの
-(例: RL で Lightning を使わない) は置き換えてよいが, 規約 1–4 は守る.
+(例: RL で Lightning を使わない) は置き換えてよいが, 規約 1–6 は守る.

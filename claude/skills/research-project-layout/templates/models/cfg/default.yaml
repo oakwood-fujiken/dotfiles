@@ -1,6 +1,6 @@
 _target_: src.{{pkg}}.config.ExperimentConfig
+epochs: 100
 # main.py が埋める値 (CLI 引数 / data/<data_dir>/config.yaml から)
-epochs: null
 data_dir: null
 seed: null
 device: null

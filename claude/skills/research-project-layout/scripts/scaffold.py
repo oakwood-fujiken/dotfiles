@@ -29,6 +29,11 @@ UNTRACKED_PATTERNS = [
     (r"^reports/", "評価結果"),
 ]
 
+# リポジトリ外を指すパス文字列 (--check 用)
+EXTERNAL_PATH = re.compile(r"""["'=\s](\.\./[\w./-]*|~/[\w./-]*|/(?:home|data|mnt|work)/[\w./-]*)""")
+# main.py の CLI 引数がこれを超えたら YAML へ移す候補として報告する (--check 用)
+MAX_CLI_FLAGS = 10
+
 
 def render(text: str, ctx: dict) -> str:
     for k, v in ctx.items():
@@ -103,9 +108,18 @@ def check(root: Path, pkg: str) -> int:
     if stray:
         notes.append(f"ルート直下の main.py 以外の .py: {', '.join(sorted(stray))} → src/{pkg}/ か scripts/ へ")
 
+    # third_party/ は git submodule で入れる
+    tp = root / "third_party"
+    if tp.is_dir():
+        gm = root / ".gitmodules"
+        modules = gm.read_text() if gm.exists() else ""
+        for d in sorted(p for p in tp.iterdir() if p.is_dir()):
+            if f"path = third_party/{d.name}" not in modules:
+                notes.append(f"third_party/{d.name}/ が git submodule ではない → `git submodule add <url> third_party/{d.name}`")
+
     # 他のトップレベル Python パッケージ
     for p in root.iterdir():
-        if p.is_dir() and (p / "__init__.py").exists() and p.name not in ("src",):
+        if p.is_dir() and (p / "__init__.py").exists() and p.name not in ("src", "third_party"):
             notes.append(f"トップレベルのパッケージ {p.name}/ → src/{pkg}/ 配下へ")
 
     # main.py が標準の CLI / 出力パスを使っているか
@@ -120,6 +134,26 @@ def check(root: Path, pkg: str) -> int:
                 notes.append(f"main.py が {pat} を参照していない")
         if f"src.{pkg}" not in text:
             notes.append(f"main.py が `src.{pkg}` から import していない")
+        if re.search(r"required\s*=\s*True", text):
+            notes.append("main.py に必須の CLI 引数がある → 既定値を持たせる")
+        flags = re.findall(r"add_argument\(\s*[\"'](--\w+)", text)
+        path_flags = [f for f in flags if re.search(r"_(root|path)$", f)]
+        if path_flags:
+            notes.append(f"main.py がパスを CLI 引数で受けている: {', '.join(path_flags)} "
+                         "→ リポジトリ内の固定パスにする")
+        if len(flags) > MAX_CLI_FLAGS:
+            notes.append(f"main.py の CLI 引数が {len(flags)} 個 → ハイパーパラメータは models/cfg/<model>.yaml へ")
+
+    # リポジトリ外のパスへの依存
+    sources = [main, *sorted((root / "src").rglob("*.py")), *sorted((root / "scripts").rglob("*.py")),
+               *sorted((root / "models/cfg").glob("*.yaml"))]
+    for src in sources:
+        if not src.is_file():
+            continue
+        hits = sorted(set(EXTERNAL_PATH.findall(src.read_text(errors="ignore"))))
+        if hits:
+            notes.append(f"{src.relative_to(root)}: リポジトリ外のパス {', '.join(hits[:3])} "
+                         "→ 全体が要るなら third_party/ に submodule, 一部なら src/<pkg>/ に抜き出す (データは data/)")
 
     # .gitignore
     gi = root / ".gitignore"
