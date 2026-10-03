@@ -78,7 +78,15 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
      CLI 引数として増やさない. 条件を変えたいときは YAML を 1 枚増やす (規約 2).
    - データ依存の値は `data/<data_dir>/config.yaml` から注入する (規約 1). CLI で渡さない.
    - 一時的な上書き用の引数 (`--epochs` など動作確認用) は既定値 `None` = 「YAML の値を使う」とする.
-7. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
+7. **ログのキーは `loss/` と `metrics/` で分ける.** wandb で「最適化している量」と「見ているだけの量」を混ぜない.
+   - `loss/<key>/{train,val}`: **実際に backprop している値**. 合計損失 (`loss/loss/...`) と, それに足し込まれている各項
+     (`loss/recon/...`, `loss/kl/...` など. 重みを掛けた後ではなく掛ける前の値でよいが, 合計に入っている項だけ).
+     val 側は勾配を流さないが, train で backprop している量と同じ定義の値なので `loss/` に置く.
+   - `metrics/<key>/{train,val}`: **backprop しない観察用の値** (精度, MAE, PSNR, 勾配ノルム, `detach` した診断量,
+     合計損失に入れていない補助損失など).
+   - ある項を係数 0 やフラグで損失から外したら, そのキーも `metrics/` へ移す.
+   - ModelCheckpoint / EarlyStopping は `loss/<monitor_key>/val` を監視する.
+8. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
 
 ## 手順 A: 新規プロジェクト
 
@@ -93,7 +101,7 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 4. 動作確認: `WANDB_MODE=disabled uv run python main.py --epochs 1 --train`
    (テンプレートの toy モデル/データで 1 epoch 回る) → `--evaluate` で `reports/example/default/seed:0/metrics.json` が出ることを確認.
 5. テンプレートの toy 部分 (`model.py` の MLP, `dataset.py` のランダムデータ, `data/example`) を実際の研究内容へ置き換える.
-   `--model` / `--data_dir` の既定値を主実験のものに直す. 構成と規約 1–6 は維持する.
+   `--model` / `--data_dir` の既定値を主実験のものに直す. 構成と規約 1–7 は維持する.
 
 ## 手順 B: 既存プロジェクトを整理
 
@@ -118,4 +126,4 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 
 `templates/` 以下. `__pkg__` / `{{pkg}}` / `{{project}}` / `{{python}}` が置換される.
 テンプレートの Lightning / hydra / wandb は参照実装と同じスタック. 研究内容に合わないもの
-(例: RL で Lightning を使わない) は置き換えてよいが, 規約 1–6 は守る.
+(例: RL で Lightning を使わない) は置き換えてよいが, 規約 1–7 は守る.

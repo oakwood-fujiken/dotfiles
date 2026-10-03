@@ -8,8 +8,13 @@ from .config import ModelConfig
 
 
 class Model(pl.LightningModule):
-    """TODO: 研究対象のモデルに置き換える. 損失は `loss/<key>/{train,val}` でログする
-    (main.py の ModelCheckpoint / EarlyStopping が `loss/<monitor_key>/val` を監視する)."""
+    """TODO: 研究対象のモデルに置き換える.
+
+    ログのキー:
+      - `loss/<key>/{train,val}`: 実際に backprop している値 (合計損失とその各項).
+        main.py の ModelCheckpoint / EarlyStopping が `loss/<monitor_key>/val` を監視する.
+      - `metrics/<key>/{train,val}`: backprop しない観察用の値.
+    """
 
     def __init__(self, cfg: ModelConfig):
         super().__init__()
@@ -26,8 +31,12 @@ class Model(pl.LightningModule):
 
     def _step(self, batch, split: str) -> torch.Tensor:
         x, y = batch
-        loss = nn.functional.mse_loss(self(x), y)
+        pred = self(x)
+        loss = nn.functional.mse_loss(pred, y)
         self.log(f"loss/loss/{split}", loss, prog_bar=True, on_epoch=True, on_step=False)
+        with torch.no_grad():
+            mae = (pred - y).abs().mean()
+        self.log(f"metrics/mae/{split}", mae, on_epoch=True, on_step=False)
         return loss
 
     def training_step(self, batch, batch_idx):

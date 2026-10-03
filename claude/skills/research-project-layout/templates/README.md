@@ -41,6 +41,8 @@ uv run python main.py --train
 
 チェックポイントは `models/params/<data_dir>/<model>/seed:<seed>/{model.ckpt,last.ckpt}` に保存される.
 
+wandb には, backprop している値を `loss/<key>/{train,val}`, 観察用の値を `metrics/<key>/{train,val}` としてログする.
+
 ## 評価
 
 ```bash
