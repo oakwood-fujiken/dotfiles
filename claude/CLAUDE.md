@@ -33,3 +33,18 @@
 - 進捗表示は **すべて rich で行う** (ループ: `rich.progress.track` / `rich.progress.Progress`,
   PyTorch Lightning: `RichProgressBar`). tqdm や `print` での進捗表示は書かない. 既存コードも触る範囲で rich に置き換える.
   依存に `rich` が無ければ追加する.
+
+## 損失の計算
+
+- 損失の reduction は **データの shape 方向 (チャネル・画素・特徴次元など 1 サンプル内の次元) は sum,
+  batch 方向 (系列なら batch と horizon/time 方向) は mean** にする.
+  `F.mse_loss(pred, target)` のような既定の全要素 mean は使わない.
+
+  ```python
+  # pred, target: (B, T, C, H, W)
+  loss = F.mse_loss(pred, target, reduction="none").sum(dim=(-3, -2, -1)).mean()  # sum over C,H,W → mean over B,T
+  # 尤度も同様: -dist.log_prob(x) をイベント次元で sum (Independent など) してから batch/time で mean
+  ```
+
+- 複数項を足す損失 (再構成 + KL など) も各項を同じ規約でそろえてから重み付けして足す.
+- マスクがある場合は, データ次元で sum したあと有効な (batch, time) の数で割る.

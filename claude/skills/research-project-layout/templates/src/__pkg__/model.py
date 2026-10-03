@@ -32,7 +32,8 @@ class Model(pl.LightningModule):
     def _step(self, batch, split: str) -> torch.Tensor:
         x, y = batch
         pred = self(x)
-        loss = nn.functional.mse_loss(pred, y)
+        # 損失はデータ次元で sum, batch 方向で mean (~/.claude/CLAUDE.md の規約)
+        loss = nn.functional.mse_loss(pred, y, reduction="none").sum(dim=-1).mean()
         self.log(f"loss/loss/{split}", loss, prog_bar=True, on_epoch=True, on_step=False)
         with torch.no_grad():
             mae = (pred - y).abs().mean()
