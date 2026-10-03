@@ -7,3 +7,23 @@
 - worktree で作業した変更は, その worktree のブランチにコミットしてよい. 主 checkout (main worktree) への統合は
   ユーザーが `/commit` を実行したときに, `commit` skill の手順で行う.
 - 主 checkout にあるユーザーの未コミット変更を stash / reset / checkout で退避・破棄しない.
+
+## YAML
+
+- 共通の接頭辞を持つキーは, 接頭辞を `_` でつないで平たく並べず, その名前で **一段下げてまとめる**.
+  YAML を新しく書くとき・キーを足すときは必ずこうする (既存の平たいキーも, 触る範囲では入れ子に直す).
+
+  ```yaml
+  # NG
+  surround_noise_enabled: true
+  surround_noise_std: 0.1
+  surround_noise_prob: 0.5
+
+  # OK
+  surround_noise:
+    enabled: true
+    std: 0.1
+    prob: 0.5
+  ```
+
+- 読み込む側 (dataclass, hydra の `_target_`, `cfg.surround_noise.std` のような参照) も入れ子に合わせて直す.

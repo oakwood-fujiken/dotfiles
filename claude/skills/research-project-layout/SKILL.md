@@ -51,6 +51,8 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
    `OmegaConf.resolve` → `hydra.utils.instantiate` で型付き設定を得る. `${seed}` 等の interpolation で
    トップレベル値を下位に流す. 新しい手法のバリアントは **YAML を 1 枚増やす** ことで表現し,
    コードの分岐はフラグ (`mode: gaussian|dlml` など) で持つ.
+   共通の接頭辞を持つキーは `surround_noise_std` のように平たく並べず, `surround_noise:` の下に一段下げてまとめ,
+   対応する dataclass もネストさせる (`surround_noise: SurroundNoiseConfig`).
 3. **main.py はオーケストレーションだけ.** モデル・損失・データ処理は `src/<pkg>/` に置く.
    `--train` / `--evaluate` などのフラグで動作を切り替える.
 4. **commit するのは コード / YAML / data の config.yaml / README / uv.lock.**
