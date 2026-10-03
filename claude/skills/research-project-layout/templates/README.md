@@ -28,6 +28,7 @@ uv sync
 | `models/params/<data_dir>/<model>/seed:<seed>/` | チェックポイント | ✗ |
 | `reports/<data_dir>/<model>/seed:<seed>/` | 評価結果 | ✗ |
 | `scripts/` | 補助スクリプト | ✓ |
+| `tests/` | テスト (手元での確認用) | ✗ |
 
 ## 学習
 

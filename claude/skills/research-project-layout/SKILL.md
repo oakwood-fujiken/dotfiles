@@ -35,6 +35,7 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 ├── reports/<data>/<model>/seed:<seed>/  # 評価結果 (metrics.json, 図). gitignore
 ├── third_party/<name>/     # (必要なら) 別リポジトリのプロジェクト全体. git submodule
 ├── scripts/                # 補助スクリプト (比較・可視化・変換・外部ベンチ実行). main.py の代わりにはしない
+├── tests/                  # (必要なら) テスト. 作ってよいが gitignore (commit しない)
 ├── outputs/                # hydra / 一時出力. gitignore
 └── wandb/                  # WandbLogger の save_dir. gitignore
 ```
@@ -54,6 +55,7 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
    `--train` / `--evaluate` などのフラグで動作を切り替える.
 4. **commit するのは コード / YAML / data の config.yaml / README / uv.lock.**
    チェックポイント, 実データ, reports, outputs, wandb は commit しない.
+   `tests/` も作ってよいが commit しない (手元での確認用. `.gitignore` に入れる).
 5. **リポジトリ内で完結させる.** `git clone` → `uv sync` した 1 ディレクトリだけで学習・評価が動くこと.
    兄弟ディレクトリなどリポジトリ外の場所を前提にしない.
    - `--oc_storm_root ../OC-STORM` のように **外部ディレクトリの場所を CLI 引数や設定で受け取る実装は禁止**.

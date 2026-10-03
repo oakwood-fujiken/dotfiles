@@ -27,6 +27,7 @@ UNTRACKED_PATTERNS = [
     (r"\.(npz|npy|hdf5|h5|blosc2)$", "実データ"),
     (r"^(outputs|wandb)/", "実験出力"),
     (r"^reports/", "評価結果"),
+    (r"^tests/", "テスト (tests/ は gitignore)"),
 ]
 
 # リポジトリ外を指すパス文字列 (--check 用)
@@ -159,7 +160,7 @@ def check(root: Path, pkg: str) -> int:
     gi = root / ".gitignore"
     if gi.exists():
         text = gi.read_text()
-        for pat in ["reports", "outputs", "wandb", ".venv", "ckpt"]:
+        for pat in ["reports", "outputs", "wandb", ".venv", "ckpt", "tests"]:
             if pat not in text:
                 issues.append(f".gitignore に {pat} が無い")
 

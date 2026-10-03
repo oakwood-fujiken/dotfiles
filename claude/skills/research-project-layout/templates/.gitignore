@@ -33,5 +33,8 @@ reports/*
 outputs/*
 wandb/*
 
+# Tests (手元での確認用. commit しない)
+tests/
+
 # Claude Code
 .claude/worktrees
