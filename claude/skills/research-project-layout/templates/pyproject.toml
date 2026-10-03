@@ -11,6 +11,8 @@ dependencies = [
     "numpy",
     "omegaconf>=2.3",
     "pytorch-lightning>=2.0",
+    # pytorch-lightning 2.2 系の RichProgressBar は rich 14 以降で起動時に落ちる
+    # (IndexError: pop from empty list). lightning を古い版に pin するときは rich<14 にする.
     "rich",
     "torch>=2.0",
     "wandb",

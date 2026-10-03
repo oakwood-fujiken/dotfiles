@@ -135,6 +135,8 @@ def check(root: Path, pkg: str) -> int:
                 notes.append(f"main.py が {pat} を参照していない")
         if f"src.{pkg}" not in text:
             notes.append(f"main.py が `src.{pkg}` から import していない")
+        if "ProgressBarCallback(" not in text:
+            notes.append(f"main.py が ProgressBarCallback を使っていない → src/{pkg}/callbacks.py に置き Trainer の callbacks へ")
         if re.search(r"required\s*=\s*True", text):
             notes.append("main.py に必須の CLI 引数がある → 既定値を持たせる")
         flags = re.findall(r"add_argument\(\s*[\"'](--\w+)", text)

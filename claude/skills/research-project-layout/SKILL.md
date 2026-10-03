@@ -25,6 +25,7 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 │       ├── dataset.py      # LightningDataModule
 │       ├── model.py        # LightningModule (大きくなれば encoders.py / decoders.py / loss.py などに分割)
 │       ├── eval.py         # 評価 → reports/ に書き出す
+│       ├── callbacks.py    # Lightning の callback. 進捗表示の ProgressBarCallback (RichProgressBar) は必ず置く
 │       └── <sub>/          # (必要なら) ベンチマーク連携や, 外部リポジトリから抜き出して実装し直した部分
 ├── models/
 │   ├── cfg/<model>.yaml    # 実験設定. `_target_: src.<pkg>.config.XxxConfig` を hydra instantiate. commit する
@@ -90,7 +91,8 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
      合計損失に入れていない補助損失など).
    - ある項を係数 0 やフラグで損失から外したら, そのキーも `metrics/` へ移す.
    - ModelCheckpoint / EarlyStopping は `loss/<monitor_key>/val` を監視する.
-8. **進捗表示はすべて rich.** 学習は Lightning の `RichProgressBar`, 評価・データ前処理・`scripts/` のループは
+8. **進捗表示はすべて rich.** 学習は `src/<pkg>/callbacks.py` の `ProgressBarCallback` (minMTRSSM と同じテーマの
+   `RichProgressBar`) を **既定で** Trainer の callbacks に入れる. 評価・データ前処理・`scripts/` のループは
    `rich.progress.track` / `Progress` を使う. tqdm や `print` での進捗表示は使わない.
 9. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
 
