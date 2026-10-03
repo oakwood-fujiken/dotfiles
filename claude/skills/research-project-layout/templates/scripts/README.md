@@ -3,3 +3,4 @@
 補助スクリプト置き場 (結果比較・可視化・データ変換・外部ベンチ実行など).
 学習/評価の本体は `main.py` に置き, ここには置かない.
 リポジトリルートから `uv run python scripts/<name>.py` で実行する前提.
+進捗表示は rich (`rich.progress.track` / `Progress`) を使う.

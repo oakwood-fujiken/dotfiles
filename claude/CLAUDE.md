@@ -27,3 +27,9 @@
   ```
 
 - 読み込む側 (dataclass, hydra の `_target_`, `cfg.surround_noise.std` のような参照) も入れ子に合わせて直す.
+
+## Python
+
+- 進捗表示は **すべて rich で行う** (ループ: `rich.progress.track` / `rich.progress.Progress`,
+  PyTorch Lightning: `RichProgressBar`). tqdm や `print` での進捗表示は書かない. 既存コードも触る範囲で rich に置き換える.
+  依存に `rich` が無ければ追加する.

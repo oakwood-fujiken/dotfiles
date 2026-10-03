@@ -11,6 +11,7 @@ dependencies = [
     "numpy",
     "omegaconf>=2.3",
     "pytorch-lightning>=2.0",
+    "rich",
     "torch>=2.0",
     "wandb",
 ]

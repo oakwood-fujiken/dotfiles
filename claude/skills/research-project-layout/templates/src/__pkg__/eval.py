@@ -4,6 +4,7 @@ import json
 import os
 
 import torch
+from rich.progress import track
 
 from .dataset import DatasetModule
 from .model import Model
@@ -16,7 +17,7 @@ def evaluate(model: Model, datamodule: DatasetModule, report_dir: str) -> dict:
     datamodule.setup("validate")
     model.eval()
     total, n = 0.0, 0
-    for x, y in datamodule.val_dataloader():
+    for x, y in track(datamodule.val_dataloader(), description="evaluate"):
         x, y = x.to(model.device), y.to(model.device)
         total += torch.nn.functional.mse_loss(model(x), y, reduction="sum").item()
         n += y.numel()

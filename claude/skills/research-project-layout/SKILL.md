@@ -90,7 +90,9 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
      合計損失に入れていない補助損失など).
    - ある項を係数 0 やフラグで損失から外したら, そのキーも `metrics/` へ移す.
    - ModelCheckpoint / EarlyStopping は `loss/<monitor_key>/val` を監視する.
-8. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
+8. **進捗表示はすべて rich.** 学習は Lightning の `RichProgressBar`, 評価・データ前処理・`scripts/` のループは
+   `rich.progress.track` / `Progress` を使う. tqdm や `print` での進捗表示は使わない.
+9. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
 
 ## 手順 A: 新規プロジェクト
 
@@ -105,7 +107,7 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 4. 動作確認: `WANDB_MODE=disabled uv run python main.py --epochs 1 --train`
    (テンプレートの toy モデル/データで 1 epoch 回る) → `--evaluate` で `reports/example/default/seed:0/metrics.json` が出ることを確認.
 5. テンプレートの toy 部分 (`model.py` の MLP, `dataset.py` のランダムデータ, `data/example`) を実際の研究内容へ置き換える.
-   `--model` / `--data_dir` の既定値を主実験のものに直す. 構成と規約 1–7 は維持する.
+   `--model` / `--data_dir` の既定値を主実験のものに直す. 構成と規約 1–8 は維持する.
 
 ## 手順 B: 既存プロジェクトを整理
 
@@ -130,4 +132,4 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 
 `templates/` 以下. `__pkg__` / `{{pkg}}` / `{{project}}` / `{{python}}` が置換される.
 テンプレートの Lightning / hydra / wandb は参照実装と同じスタック. 研究内容に合わないもの
-(例: RL で Lightning を使わない) は置き換えてよいが, 規約 1–7 は守る.
+(例: RL で Lightning を使わない) は置き換えてよいが, 規約 1–8 は守る.
