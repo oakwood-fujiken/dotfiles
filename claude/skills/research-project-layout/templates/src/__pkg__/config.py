@@ -67,4 +67,4 @@ class ExperimentConfig:
     epochs: int = 100
     visualize: VisualizeConfig = field(default_factory=VisualizeConfig)
     monitor_key: str = "loss"
-    early_stop: int = 0
+    early_stop: int = 20

@@ -39,4 +39,5 @@ visualize:
   fps: 15
 
 monitor_key: loss
-early_stop: 0
+# val の損失が この epoch 数 改善しなければ止める (0 で無効)
+early_stop: 20

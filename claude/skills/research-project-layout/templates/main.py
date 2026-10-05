@@ -64,8 +64,13 @@ def train(model_name: str, config: ExperimentConfig):
     callbacks = [
         ProgressBarCallback(),
         VisualizePrediction(config.visualize),
-        ModelCheckpoint(dirpath=path, filename="model", monitor=monitor,
-                        save_on_train_epoch_end=False, save_last=True),
+        # best: val の損失が改善したときだけ model.ckpt を更新
+        ModelCheckpoint(dirpath=path, filename="model", monitor=monitor, mode="min",
+                        save_on_train_epoch_end=False, enable_version_counter=False),
+        # last: 毎 epoch の val 後に last.ckpt を更新. Lightning 2.x の save_last=True は best を保存した
+        # ときにしか last を書かないので, monitor なしの ModelCheckpoint を別に置く.
+        ModelCheckpoint(dirpath=path, filename="last", monitor=None,
+                        save_on_train_epoch_end=False, enable_version_counter=False),
     ]
     if config.early_stop > 0:
         callbacks.append(EarlyStopping(monitor=monitor, patience=config.early_stop, mode="min"))

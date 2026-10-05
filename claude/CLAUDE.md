@@ -57,3 +57,19 @@
   - 別ファイルに分かれる図は, 全条件のデータから範囲を先に計算し, 各図に同じ `set_xlim` / `set_ylim` を指定する.
   - ヒートマップ・画像・カラーバーも同じ `vmin` / `vmax` (と同じ colormap / norm) を使う.
   - 対数軸にするなら同質の図すべてで対数にする.
+
+## モデルの学習 (大前提)
+
+学習ループは次の構成を必ず保つ. 新しく書くときも既存コードを直すときも, これを崩さない.
+
+- **1 epoch = 学習データを 1 周.** `limit_train_batches` や無限 sampler / `max_steps` で epoch の意味を変えない.
+- **最大 epoch 数を指定する** (`max_epochs`. 設定ファイルに書き, 既定値を持たせる).
+- **1 epoch ごとに validation を回す** (`check_val_every_n_epoch=1`).
+- **validation の結果でパラメータを保存する.**
+  - `last` (最新) は毎 epoch 必ず保存する.
+  - `best` は validation の損失 (`loss/<key>/val`) が改善したときだけ保存する.
+- **early stopping を入れる.** 同じ validation の損失を監視し, `patience` epoch 改善しなければ止める
+  (`patience` は設定ファイルに書き, 既定値を持たせる).
+
+PyTorch Lightning なら `ModelCheckpoint(monitor="loss/<key>/val", mode="min", save_last=True)` と
+`EarlyStopping(monitor="loss/<key>/val", mode="min", patience=...)` を Trainer の callbacks に入れる.

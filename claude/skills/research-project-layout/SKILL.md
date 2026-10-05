@@ -90,7 +90,8 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
    - `metrics/<key>/{train,val}`: **backprop しない観察用の値** (精度, MAE, PSNR, 勾配ノルム, `detach` した診断量,
      合計損失に入れていない補助損失など).
    - ある項を係数 0 やフラグで損失から外したら, そのキーも `metrics/` へ移す.
-   - ModelCheckpoint / EarlyStopping は `loss/<monitor_key>/val` を監視する.
+   - ModelCheckpoint / EarlyStopping は `loss/<monitor_key>/val` を監視する. 学習ループの構成 (1 epoch = 1 周, 毎 epoch val,
+     `last.ckpt` は毎回 / `model.ckpt` は best のみ, `max_epochs`, early stopping) は `~/.claude/CLAUDE.md` の「モデルの学習」に従う.
 8. **進捗表示はすべて rich.** 学習は `src/<pkg>/callbacks.py` の `ProgressBarCallback` (minMTRSSM と同じテーマの
    `RichProgressBar`) を **既定で** Trainer の callbacks に入れる. 評価・データ前処理・`scripts/` のループは
    `rich.progress.track` / `Progress` を使う. tqdm や `print` での進捗表示は使わない.
