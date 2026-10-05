@@ -113,8 +113,9 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
    ```
    `--dry-run` で作成予定だけ表示できる.
 3. `cd <target_dir> && git init` (未初期化なら) → `uv sync` → `uv lock` 済みを確認.
-4. 動作確認: `WANDB_MODE=disabled uv run python main.py --epochs 1 --train`
-   (テンプレートの toy モデル/データで 1 epoch 回る) → `--evaluate` で `reports/example/default/seed:0/metrics.json` が出ることを確認.
+4. 動作確認は `uv run python -c "import main"` と `scaffold.py <target_dir> --pkg <pkg> --check` まで. 学習は回さない
+   (`~/.claude/CLAUDE.md` の「動作確認」). ユーザーが自分で回すコマンドとして
+   `WANDB_MODE=disabled uv run python main.py --epochs 1 --train` → `--evaluate` を案内する.
 5. テンプレートの toy 部分 (`model.py` の MLP, `dataset.py` のランダムデータ, `data/example`) を実際の研究内容へ置き換える.
    `--model` / `--data_dir` の既定値を主実験のものに直す. 構成と規約 1–9 は維持する.
 
@@ -135,7 +136,8 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 3. 移動は `git mv` で履歴を保つ. import (`from src.<pkg>...`) とパス文字列を更新する.
 4. 不足ファイルだけ scaffold で補う (上書きしないので安全): `scaffold.py <dir> --pkg <pkg>`.
    既存の `.gitignore` / `README.md` / `pyproject.toml` は上書きされないので, テンプレートとの差分を見て手で統合する.
-5. 既存の実験コマンドが同じ結果パスへ出力されることを, 1 epoch 程度の実行で確認する.
+5. 既存の実験コマンドが同じ結果パスへ出力されるかは, コード上のパス組み立てで確認する. 学習を伴う実行は指示がない限り行わず,
+   ユーザーが回すコマンドを示す.
 
 ## テンプレート
 

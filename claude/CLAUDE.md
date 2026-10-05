@@ -73,3 +73,9 @@
 
 PyTorch Lightning なら `ModelCheckpoint(monitor="loss/<key>/val", mode="min", save_last=True)` と
 `EarlyStopping(monitor="loss/<key>/val", mode="min", patience=...)` を Trainer の callbacks に入れる.
+
+## 動作確認
+
+- **学習を伴う実行 (1 epoch だけの学習, デモプロジェクトでの学習, early stopping の確認など) は, 指示がない限り行わない.**
+  時間がかかりすぎる. エラーがあればユーザーが自分で報告する.
+- 確認は import・静的チェック・関数をダミーの小さなテンソルで直接呼ぶ程度にとどめ, 学習を回していないことを報告に明記する.
