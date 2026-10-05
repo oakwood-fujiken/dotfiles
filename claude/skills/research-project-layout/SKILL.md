@@ -25,7 +25,7 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 │       ├── dataset.py      # LightningDataModule
 │       ├── model.py        # LightningModule (大きくなれば encoders.py / decoders.py / loss.py などに分割)
 │       ├── eval.py         # 評価 → reports/ に書き出す
-│       ├── callbacks.py    # Lightning の callback. 進捗表示の ProgressBarCallback (RichProgressBar) は必ず置く
+│       ├── callbacks.py    # Lightning の callback. ProgressBarCallback (進捗) と VisualizePrediction (生成/再構成の可視化)
 │       └── <sub>/          # (必要なら) ベンチマーク連携や, 外部リポジトリから抜き出して実装し直した部分
 ├── models/
 │   ├── cfg/<model>.yaml    # 実験設定. `_target_: src.<pkg>.config.XxxConfig` を hydra instantiate. commit する
@@ -94,7 +94,13 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 8. **進捗表示はすべて rich.** 学習は `src/<pkg>/callbacks.py` の `ProgressBarCallback` (minMTRSSM と同じテーマの
    `RichProgressBar`) を **既定で** Trainer の callbacks に入れる. 評価・データ前処理・`scripts/` のループは
    `rich.progress.track` / `Progress` を使う. tqdm や `print` での進捗表示は使わない.
-9. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
+9. **生成・再構成があるなら, 学習中に target と並べて見られるようにする.** `callbacks.py` の `VisualizePrediction` を
+   Trainer に入れ, `validation_step` が `prediction/target` (reference/target) と `prediction/<name>` (生成・再構成, 複数可)
+   を返す. val の最初の batch を `visualize.every_n_epoch` ごとに wandb へログする.
+   - 時系列画像 (B, T, C, H, W) は各 step で `[target | <name> ...]` を横に並べ, **1 step = 1 frame の mp4 動画** (`prediction/video`).
+   - 画像 (B, C, H, W) は並べた画像, ベクトル (B, T, D) / (B, D) は同じ軸範囲で重ねた折れ線.
+   - 画像は [0, 1] で返す. 可視化専用の重い処理 (サンプリングなど) は `every_n_epoch` の epoch の batch 0 だけで行う.
+10. **README は日本語**で「セットアップ (追加の手作業含む) / 学習コマンド / 評価コマンド / 手法の説明と設定キー / バージョン pin の理由」を書く.
 
 ## 手順 A: 新規プロジェクト
 
@@ -109,7 +115,7 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 4. 動作確認: `WANDB_MODE=disabled uv run python main.py --epochs 1 --train`
    (テンプレートの toy モデル/データで 1 epoch 回る) → `--evaluate` で `reports/example/default/seed:0/metrics.json` が出ることを確認.
 5. テンプレートの toy 部分 (`model.py` の MLP, `dataset.py` のランダムデータ, `data/example`) を実際の研究内容へ置き換える.
-   `--model` / `--data_dir` の既定値を主実験のものに直す. 構成と規約 1–8 は維持する.
+   `--model` / `--data_dir` の既定値を主実験のものに直す. 構成と規約 1–9 は維持する.
 
 ## 手順 B: 既存プロジェクトを整理
 
@@ -134,4 +140,4 @@ description: 研究 (ML) プロジェクトを標準のディレクトリ/ファ
 
 `templates/` 以下. `__pkg__` / `{{pkg}}` / `{{project}}` / `{{python}}` が置換される.
 テンプレートの Lightning / hydra / wandb は参照実装と同じスタック. 研究内容に合わないもの
-(例: RL で Lightning を使わない) は置き換えてよいが, 規約 1–8 は守る.
+(例: RL で Lightning を使わない) は置き換えてよいが, 規約 1–9 は守る.

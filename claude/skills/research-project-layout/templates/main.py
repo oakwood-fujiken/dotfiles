@@ -11,7 +11,7 @@ from omegaconf import OmegaConf
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-from src.{{pkg}}.callbacks import ProgressBarCallback
+from src.{{pkg}}.callbacks import ProgressBarCallback, VisualizePrediction
 from src.{{pkg}}.config import ExperimentConfig
 from src.{{pkg}}.dataset import DatasetModule
 from src.{{pkg}}.eval import evaluate
@@ -63,6 +63,7 @@ def train(model_name: str, config: ExperimentConfig):
     monitor = f"loss/{config.monitor_key}/val"
     callbacks = [
         ProgressBarCallback(),
+        VisualizePrediction(config.visualize),
         ModelCheckpoint(dirpath=path, filename="model", monitor=monitor,
                         save_on_train_epoch_end=False, save_last=True),
     ]

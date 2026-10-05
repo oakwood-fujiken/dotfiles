@@ -31,5 +31,12 @@ trainer:
   check_val_every_n_epoch: 1
   gradient_clip_val: null
 
+# 生成・再構成の可視化 (callbacks.VisualizePrediction)
+visualize:
+  _target_: src.{{pkg}}.config.VisualizeConfig
+  every_n_epoch: 10
+  num_samples: 4
+  fps: 15
+
 monitor_key: loss
 early_stop: 0

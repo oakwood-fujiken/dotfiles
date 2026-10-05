@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, Optional, Tuple
 
 from omegaconf import ListConfig
@@ -46,6 +46,15 @@ class TrainerConfig:
 
 
 @dataclass
+class VisualizeConfig:
+    """callbacks.VisualizePrediction の設定."""
+
+    every_n_epoch: int = 10
+    num_samples: int = 4
+    fps: int = 15
+
+
+@dataclass
 class ExperimentConfig:
     data_dir: str
     seed: int
@@ -56,5 +65,6 @@ class ExperimentConfig:
     model: ModelConfig
     trainer: TrainerConfig
     epochs: int = 100
+    visualize: VisualizeConfig = field(default_factory=VisualizeConfig)
     monitor_key: str = "loss"
     early_stop: int = 0

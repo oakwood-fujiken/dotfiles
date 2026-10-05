@@ -14,6 +14,8 @@ class Model(pl.LightningModule):
       - `loss/<key>/{train,val}`: 実際に backprop している値 (合計損失とその各項).
         main.py の ModelCheckpoint / EarlyStopping が `loss/<monitor_key>/val` を監視する.
       - `metrics/<key>/{train,val}`: backprop しない観察用の値.
+    validation_step は `prediction/target` と `prediction/<name>` を返し, callbacks.VisualizePrediction が
+    target と並べて wandb に可視化する (時系列画像なら 1 step = 1 frame の mp4).
     """
 
     def __init__(self, cfg: ModelConfig):
@@ -29,7 +31,7 @@ class Model(pl.LightningModule):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
 
-    def _step(self, batch, split: str) -> torch.Tensor:
+    def _step(self, batch, split: str) -> tuple[torch.Tensor, torch.Tensor]:
         x, y = batch
         pred = self(x)
         # 損失はデータ次元で sum, batch 方向で mean (~/.claude/CLAUDE.md の規約)
@@ -38,13 +40,14 @@ class Model(pl.LightningModule):
         with torch.no_grad():
             mae = (pred - y).abs().mean()
         self.log(f"metrics/mae/{split}", mae, on_epoch=True, on_step=False)
-        return loss
+        return loss, pred
 
     def training_step(self, batch, batch_idx):
-        return self._step(batch, "train")
+        return self._step(batch, "train")[0]
 
     def validation_step(self, batch, batch_idx):
-        return self._step(batch, "val")
+        loss, pred = self._step(batch, "val")
+        return {"loss": loss, "prediction/target": batch[1], "prediction/pred": pred}
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.cfg.lr)
